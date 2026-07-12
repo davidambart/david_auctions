@@ -32,7 +32,7 @@ function card(w){
   const charity=w.charity?`<div class="charity-row"><dt>Charity</dt><dd>${esc(w.charity)}</dd></div>`:'';
   const imgs=JSON.stringify(w.images).replace(/'/g,'&#39;');
   const imageTitle=`${w.title}, ${w.year} — David Ambarzumjan`;
-  return `<article class="artwork" data-search="${esc(`${w.title} ${w.year}`.toLowerCase())}" data-year="${esc(w.year)}" data-auction-date="${esc(w.auctionEndISO)}" data-bid="${bidValue(w.winningBid)}" data-id="${esc(w.id)}">
+  return `<article class="artwork" data-title="${esc(w.title.toLowerCase())}" data-year="${esc(w.year)}" data-auction-date="${esc(w.auctionEndISO)}" data-winning-bid="${bidValue(w.winningBid)}" data-id="${esc(w.id)}">
     <button class="image-button" type="button" aria-label="View ${esc(w.title)} image gallery" data-images='${imgs}' data-title="${esc(w.title)}">
       <img src="${esc(w.image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" loading="lazy">
     </button>
@@ -63,15 +63,15 @@ function setupViewer(){
 function filter(){
 const q=search.value.trim().toLowerCase(),y=yearSelect.value;
 let cards=[...document.querySelectorAll('.artwork')];
-cards.forEach(w=>{const ok=(!q||w.dataset.search.includes(q))&&(y==='all'||w.dataset.year===y);w.hidden=!ok;});
-let vis=cards.filter(c=>!c.hidden);
 const cmp={
 latest:(a,b)=>b.dataset.auctionDate.localeCompare(a.dataset.auctionDate)||Number(a.dataset.id)-Number(b.dataset.id),
 earliest:(a,b)=>a.dataset.auctionDate.localeCompare(b.dataset.auctionDate)||Number(a.dataset.id)-Number(b.dataset.id),
-high:(a,b)=>Number(b.dataset.bid)-Number(a.dataset.bid)||Number(a.dataset.id)-Number(b.dataset.id),
-low:(a,b)=>Number(a.dataset.bid)-Number(b.dataset.bid)||Number(a.dataset.id)-Number(b.dataset.id)
+high:(a,b)=>Number(b.dataset.winningBid)-Number(a.dataset.winningBid)||Number(a.dataset.id)-Number(b.dataset.id),
+low:(a,b)=>Number(a.dataset.winningBid)-Number(b.dataset.winningBid)||Number(a.dataset.id)-Number(b.dataset.id)
 }[sortSelect.value||'latest'];
-vis.sort(cmp).forEach(c=>archive.appendChild(c));
+cards.sort(cmp).forEach(c=>archive.appendChild(c));
+cards.forEach(w=>{const matchesSearch=!q||w.dataset.title.includes(q)||w.dataset.year.includes(q);w.hidden=!matchesSearch||(y!=='all'&&w.dataset.year!==y);});
+const vis=cards.filter(c=>!c.hidden);
 empty.hidden=vis.length!==0;
 }
 async function init(){

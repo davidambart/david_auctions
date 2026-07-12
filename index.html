@@ -20,8 +20,10 @@
 </header>
 <section aria-label="Archive filters" class="controls">
 <label>Search<input id="search" placeholder="Title or year" type="search"/></label>
+<div class="select-controls">
 <label>Year<select id="year"><option value="all">All years</option></select></label>
 <label>Sort <select id="sort"><option value="latest">Latest auction</option><option value="earliest">Earliest auction</option><option value="high">Highest auction result</option><option value="low">Lowest auction result</option></select></label>
+</div>
 <button id="reset" type="button">Reset</button></section>
 <section aria-live="polite" class="archive" id="archive"></section>
 <p class="empty" hidden="" id="empty">No works match those filters.</p>
