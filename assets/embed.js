@@ -23,7 +23,7 @@
     .shell{padding:1px var(--pad) 90px}
     .intro{padding:clamp(72px,12cqw,160px) 0 clamp(60px,9cqw,115px);max-width:850px}
     .eyebrow,.count{text-transform:uppercase;letter-spacing:.17em;font-size:13px;line-height:1.45}
-    h1{font:400 clamp(58px,10cqw,140px)/.82 "Palatino Linotype","Book Antiqua",Palatino,serif;font-synthesis:none;margin:20px 0 35px;letter-spacing:-.045em}
+    h1{font-family:"Cormorant Garamond",Georgia,serif;font-style:normal;font-weight:400;font-size:clamp(58px,10cqw,140px);line-height:.82;margin:20px 0 35px;letter-spacing:-.045em}
     .description{font:400 14px/1.5 Inter,Arial,sans-serif;max-width:680px;margin:0}
     .count{margin-top:38px;color:var(--muted)}
     .controls{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:15px 0;display:flex;align-items:end;gap:18px;margin-bottom:60px}
@@ -37,7 +37,7 @@
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
     .meta{display:grid;grid-template-columns:1fr auto;gap:30px;padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
-    .meta h2{font:400 clamp(27px,3cqw,42px)/1 "Palatino Linotype","Book Antiqua",Palatino,serif;font-synthesis:none;margin:0}
+    .meta h2{font-family:"Cormorant Garamond",Georgia,serif;font-style:normal;font-weight:400;font-size:clamp(27px,3cqw,42px);line-height:1;margin:0}
     .year{margin:8px 0 0;color:var(--muted)}
     dl{margin:0;min-width:180px}
     dl div{display:flex;justify-content:space-between;gap:20px;padding:2px 0 9px}
