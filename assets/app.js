@@ -68,11 +68,12 @@ function auctionResultEuro(w){
 }
 function card(w){
   const charity=w.charity?`<div class="charity-row"><dt>Charity</dt><dd>${esc(w.charity)}</dd></div>`:'';
+  const imgs=JSON.stringify(w.images).replace(/'/g,'&#39;');
   const imageTitle=`${w.title}, ${w.year} — David Ambarzumjan`;
   return `<article class="artwork" data-title="${esc(w.title.toLowerCase())}" data-year="${esc(w.year)}" data-auction-date="${esc(w.auctionEndISO)}" data-result-eur="${auctionResultEuro(w)}" data-id="${esc(w.id)}">
-    <div class="image-button">
+    <button class="image-button" type="button" aria-label="View ${esc(w.title)} image gallery" data-images='${imgs}' data-title="${esc(w.title)}">
       <img src="${esc(w.image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" loading="lazy">
-    </div>
+    </button>
     <div class="meta">
       <div><h2>${esc(w.title)}</h2><p class="year">${esc(w.year)}</p></div>
       <dl>
@@ -89,7 +90,7 @@ function setupViewer(){
   let gallery=[],galleryIndex=0,touchStartX=0,touchStartY=0;
   function renderImage(direction=0){if(!gallery.length)return;vimg.classList.remove('slide-left','slide-right');void vimg.offsetWidth;vimg.style.objectFit='contain';vimg.src=gallery[galleryIndex];vimg.alt=`${vtitle.textContent} by David Ambarzumjan, image ${galleryIndex+1} of ${gallery.length}`;vimg.title=`${vtitle.textContent} — David Ambarzumjan`;counter.textContent=`${galleryIndex+1} / ${gallery.length}`;prev.hidden=gallery.length<2;next.hidden=gallery.length<2;if(direction)vimg.classList.add(direction>0?'slide-left':'slide-right');}
   function move(step){if(gallery.length<2)return;galleryIndex=(galleryIndex+step+gallery.length)%gallery.length;renderImage(step);}
-  document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>{if(window.self!==window.top){const galleryUrl=new URL(window.location.href);galleryUrl.search='';galleryUrl.searchParams.set('gallery',b.dataset.id);window.open(galleryUrl,'_blank','noopener');return}try{gallery=JSON.parse(b.dataset.images||'[]'); gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=b.dataset.title;renderImage();viewer.showModal();document.body.classList.add('viewer-open');}));
+  document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>{if(window.self!==window.top)return;try{gallery=JSON.parse(b.dataset.images||'[]'); gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=b.dataset.title;renderImage();viewer.showModal();document.body.classList.add('viewer-open');}));
   prev.addEventListener('click',e=>{e.stopPropagation();move(-1)});next.addEventListener('click',e=>{e.stopPropagation();move(1)});
   function closeViewer(){if(viewer.open)viewer.close();document.body.classList.remove('viewer-open');vimg.src='';}
   viewer.querySelector('.close').addEventListener('click',closeViewer);viewer.addEventListener('click',e=>{if(e.target===viewer)closeViewer()});
@@ -120,7 +121,7 @@ async function init(){
     data.sort((a,b)=>String(b.auctionEndISO).localeCompare(String(a.auctionEndISO))||Number(a.id)-Number(b.id));
     const years=[...new Set(data.map(w=>String(w.year)))].sort((a,b)=>Number(b)-Number(a)); years.forEach(y=>yearSelect.insertAdjacentHTML('beforeend',`<option value="${esc(y)}">${esc(y)}</option>`));
     const nums=data.map(w=>Number(w.year)).filter(Number.isFinite); document.querySelector('#count').textContent=`${data.length} works · ${Math.min(...nums)}–${Math.max(...nums)}`;
-    archive.innerHTML=data.map(card).join('');reportEmbedHeight();
+    archive.innerHTML=data.map(card).join('');setupViewer();reportEmbedHeight();
     search.addEventListener('input',filter);yearSelect.addEventListener('change',filter);sortSelect.addEventListener('change',filter);document.querySelector('#reset').addEventListener('click',()=>{search.value='';yearSelect.value='all';sortSelect.value='latest';filter()});
   }catch(err){console.error(err);loadError.hidden=false;}
 }
