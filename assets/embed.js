@@ -37,7 +37,7 @@
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
     .meta{display:grid;grid-template-columns:1fr auto;gap:30px;padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
-    .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0}
+    .meta h2{font:300 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;font-synthesis:none;margin:0}
     .year{margin:8px 0 0;color:var(--muted)}
     dl{margin:0;min-width:180px}
     dl div{display:flex;justify-content:space-between;gap:20px;padding:2px 0 9px}
