@@ -1,44 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta name="robots" content="noindex, nofollow">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="index,follow">
-  <title>Auction Archive — David Ambarzumjan</title>
-  <meta name="description" content="A chronological archive of David Ambarzumjan's miniature original painting auctions and final results.">
-  <link rel="stylesheet" href="assets/styles.css">
+<meta content="noindex, nofollow" name="robots"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="index,follow" name="robots"/>
+<title>Auction Archive — David Ambarzumjan</title>
+<meta content="A chronological archive of David Ambarzumjan's miniature original painting auctions and final results." name="description"/>
+<link href="assets/styles.css" rel="stylesheet"/>
 </head>
 <body>
-  <main class="page-shell">
-    <header class="intro">
-      <p class="eyebrow">Brushstrokes in Time</p>
-      <h1>Auction Archive</h1>
-      <p class="description">A chronological archive of miniature original paintings and their final auction results.</p>
-      <p id="count" class="count" aria-live="polite"></p>
-    </header>
-
-    <section class="controls" aria-label="Archive filters">
-      <label>Search<input id="search" type="search" placeholder="Title, year, bid or charity"></label>
-      <label>Year<select id="year"><option value="all">All years</option></select></label>
-      <button id="reset" type="button">Reset</button>
-    </section>
-
-    <section id="archive" class="archive" aria-live="polite"></section>
-    <p id="empty" class="empty" hidden>No works match those filters.</p>
-    <p id="load-error" class="empty" hidden>Archive data could not be loaded.</p>
-  </main>
-
-  <dialog id="viewer" class="viewer">
-    <button class="close" type="button" aria-label="Close gallery">×</button>
-    <button class="nav previous" type="button" aria-label="Previous image">‹</button>
-    <figure>
-      <img alt="">
-      <figcaption class="viewer-caption"><p></p><span class="image-counter"></span></figcaption>
-    </figure>
-    <button class="nav next" type="button" aria-label="Next image">›</button>
-  </dialog>
-
-  <script src="assets/app.js" defer></script>
+<main class="page-shell">
+<header class="intro">
+<p class="eyebrow">Brushstrokes in Time</p>
+<h1>Auction Archive</h1>
+<p class="description">A chronological archive of miniature original paintings and their final auction results.</p>
+<p aria-live="polite" class="count" id="count"></p>
+</header>
+<section aria-label="Archive filters" class="controls">
+<label>Search<input id="search" placeholder="Title, year, bid or charity" type="search"/></label>
+<label>Year<select id="year"><option value="all">All years</option></select></label>
+<button id="reset" type="button">Reset</button>
+<label>Sort <select id="sort"><option value="latest">Latest auction</option><option value="earliest">Earliest auction</option><option value="high">Highest auction result</option><option value="low">Lowest auction result</option></select></label></section>
+<section aria-live="polite" class="archive" id="archive"></section>
+<p class="empty" hidden="" id="empty">No works match those filters.</p>
+<p class="empty" hidden="" id="load-error">Archive data could not be loaded.</p>
+</main>
+<dialog class="viewer" id="viewer">
+<button aria-label="Close gallery" class="close" type="button">×</button>
+<button aria-label="Previous image" class="nav previous" type="button">‹</button>
+<figure>
+<img alt=""/>
+<figcaption class="viewer-caption"><p></p><span class="image-counter"></span></figcaption>
+</figure>
+<button aria-label="Next image" class="nav next" type="button">›</button>
+</dialog>
+<script defer="" src="assets/app.js"></script>
 </body>
 </html>
