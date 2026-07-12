@@ -6,6 +6,23 @@ const empty=document.querySelector('#empty');
 const loadError=document.querySelector('#load-error');
 let data=[];
 
+function setupEmbedHeight(){
+  if(window.self===window.top)return;
+  let framePending=false;
+  const reportHeight=()=>{
+    if(framePending)return;
+    framePending=true;
+    requestAnimationFrame(()=>{
+      framePending=false;
+      const height=Math.ceil(document.querySelector('main').getBoundingClientRect().bottom);
+      window.parent.postMessage({type:'auction-archive-height',height},'*');
+    });
+  };
+  new ResizeObserver(reportHeight).observe(document.body);
+  window.addEventListener('load',reportHeight);
+  reportHeight();
+}
+
 function parseCSV(text){
   const rows=[]; let row=[],field='',quoted=false;
   text=text.replace(/^\uFEFF/,'');
@@ -105,4 +122,5 @@ async function init(){
     search.addEventListener('input',filter);yearSelect.addEventListener('change',filter);sortSelect.addEventListener('change',filter);document.querySelector('#reset').addEventListener('click',()=>{search.value='';yearSelect.value='all';sortSelect.value='latest';filter()});
   }catch(err){console.error(err);loadError.hidden=false;}
 }
+setupEmbedHeight();
 init();
