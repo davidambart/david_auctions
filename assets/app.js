@@ -5,11 +5,12 @@ const sortSelect=document.querySelector('#sort');
 const empty=document.querySelector('#empty');
 const loadError=document.querySelector('#load-error');
 let data=[];
+let reportEmbedHeight=()=>{};
 
 function setupEmbedHeight(){
   if(window.self===window.top)return;
   let framePending=false;
-  const reportHeight=()=>{
+  reportEmbedHeight=()=>{
     if(framePending)return;
     framePending=true;
     requestAnimationFrame(()=>{
@@ -18,9 +19,9 @@ function setupEmbedHeight(){
       window.parent.postMessage({type:'auction-archive-height',height},'*');
     });
   };
-  new ResizeObserver(reportHeight).observe(document.body);
-  window.addEventListener('load',reportHeight);
-  reportHeight();
+  new ResizeObserver(reportEmbedHeight).observe(document.querySelector('main'));
+  window.addEventListener('load',reportEmbedHeight);
+  reportEmbedHeight();
 }
 
 function parseCSV(text){
@@ -110,6 +111,7 @@ cards.sort(cmp).forEach(c=>archive.appendChild(c));
 cards.forEach(w=>{const matchesSearch=!q||w.dataset.title.includes(q)||w.dataset.year.includes(q);w.hidden=!matchesSearch||(y!=='all'&&w.dataset.year!==y);});
 const vis=cards.filter(c=>!c.hidden);
 empty.hidden=vis.length!==0;
+reportEmbedHeight();
 }
 async function init(){
   try{
@@ -118,7 +120,7 @@ async function init(){
     data.sort((a,b)=>String(b.auctionEndISO).localeCompare(String(a.auctionEndISO))||Number(a.id)-Number(b.id));
     const years=[...new Set(data.map(w=>String(w.year)))].sort((a,b)=>Number(b)-Number(a)); years.forEach(y=>yearSelect.insertAdjacentHTML('beforeend',`<option value="${esc(y)}">${esc(y)}</option>`));
     const nums=data.map(w=>Number(w.year)).filter(Number.isFinite); document.querySelector('#count').textContent=`${data.length} works · ${Math.min(...nums)}–${Math.max(...nums)}`;
-    archive.innerHTML=data.map(card).join(''); setupViewer();
+    archive.innerHTML=data.map(card).join(''); setupViewer();reportEmbedHeight();
     search.addEventListener('input',filter);yearSelect.addEventListener('change',filter);sortSelect.addEventListener('change',filter);document.querySelector('#reset').addEventListener('click',()=>{search.value='';yearSelect.value='all';sortSelect.value='latest';filter()});
   }catch(err){console.error(err);loadError.hidden=false;}
 }
