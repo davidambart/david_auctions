@@ -27,11 +27,12 @@ function parseCSV(text){
   return rows.filter(r=>r.some(v=>v!=='')).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
 }
 function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function bidValue(value=''){return Number(String(value).replace(/[^0-9]/g,''))||0;}
 function card(w){
   const charity=w.charity?`<div class="charity-row"><dt>Charity</dt><dd>${esc(w.charity)}</dd></div>`:'';
   const imgs=JSON.stringify(w.images).replace(/'/g,'&#39;');
   const imageTitle=`${w.title}, ${w.year} — David Ambarzumjan`;
-  return `<article class="artwork" data-search="${esc(`${w.title} ${w.year}`.toLowerCase())}" data-year="${esc(w.year)}">
+  return `<article class="artwork" data-search="${esc(`${w.title} ${w.year}`.toLowerCase())}" data-year="${esc(w.year)}" data-auction-date="${esc(w.auctionEndISO)}" data-bid="${bidValue(w.winningBid)}" data-id="${esc(w.id)}">
     <button class="image-button" type="button" aria-label="View ${esc(w.title)} image gallery" data-images='${imgs}' data-title="${esc(w.title)}">
       <img src="${esc(w.image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" loading="lazy">
     </button>
@@ -65,10 +66,10 @@ let cards=[...document.querySelectorAll('.artwork')];
 cards.forEach(w=>{const ok=(!q||w.dataset.search.includes(q))&&(y==='all'||w.dataset.year===y);w.hidden=!ok;});
 let vis=cards.filter(c=>!c.hidden);
 const cmp={
-latest:(a,b)=>b.querySelector('time').dateTime.localeCompare(a.querySelector('time').dateTime),
-earliest:(a,b)=>a.querySelector('time').dateTime.localeCompare(b.querySelector('time').dateTime),
-high:(a,b)=>parseFloat((b.innerText.match(/Winning bid\s*([^\n]+)/)||['','0'])[1].replace(/[^0-9.]/g,''))-parseFloat((a.innerText.match(/Winning bid\s*([^\n]+)/)||['','0'])[1].replace(/[^0-9.]/g,'')),
-low:(a,b)=>parseFloat((a.innerText.match(/Winning bid\s*([^\n]+)/)||['','0'])[1].replace(/[^0-9.]/g,''))-parseFloat((b.innerText.match(/Winning bid\s*([^\n]+)/)||['','0'])[1].replace(/[^0-9.]/g,''))
+latest:(a,b)=>b.dataset.auctionDate.localeCompare(a.dataset.auctionDate)||Number(a.dataset.id)-Number(b.dataset.id),
+earliest:(a,b)=>a.dataset.auctionDate.localeCompare(b.dataset.auctionDate)||Number(a.dataset.id)-Number(b.dataset.id),
+high:(a,b)=>Number(b.dataset.bid)-Number(a.dataset.bid)||Number(a.dataset.id)-Number(b.dataset.id),
+low:(a,b)=>Number(a.dataset.bid)-Number(b.dataset.bid)||Number(a.dataset.id)-Number(b.dataset.id)
 }[sortSelect.value||'latest'];
 vis.sort(cmp).forEach(c=>archive.appendChild(c));
 empty.hidden=vis.length!==0;
@@ -81,7 +82,7 @@ async function init(){
     const years=[...new Set(data.map(w=>String(w.year)))].sort((a,b)=>Number(b)-Number(a)); years.forEach(y=>yearSelect.insertAdjacentHTML('beforeend',`<option value="${esc(y)}">${esc(y)}</option>`));
     const nums=data.map(w=>Number(w.year)).filter(Number.isFinite); document.querySelector('#count').textContent=`${data.length} works · ${Math.min(...nums)}–${Math.max(...nums)}`;
     archive.innerHTML=data.map(card).join(''); setupViewer();
-    search.addEventListener('input',filter);yearSelect.addEventListener('change',filter);sortSelect.addEventListener('change',filter);document.querySelector('#reset').addEventListener('click',()=>{search.value='';yearSelect.value='all';filter()});
+    search.addEventListener('input',filter);yearSelect.addEventListener('change',filter);sortSelect.addEventListener('change',filter);document.querySelector('#reset').addEventListener('click',()=>{search.value='';yearSelect.value='all';sortSelect.value='latest';filter()});
   }catch(err){console.error(err);loadError.hidden=false;}
 }
 init();
