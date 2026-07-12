@@ -22,7 +22,7 @@
     :host{--ink:#111;--muted:#777;--line:#ddd;--paper:#fff;--pad:clamp(20px,4cqw,64px);display:block;width:100%;container-type:inline-size;color:var(--ink);background:var(--paper);font:14px Inter,Arial,sans-serif}
     *{box-sizing:border-box}
     [hidden]{display:none!important}
-    .shell{padding:0 var(--pad) 90px}
+    .shell{padding:0 0 90px}
     .intro{display:none}
     .eyebrow,.count{text-transform:uppercase;letter-spacing:.17em;font-size:13px;line-height:1.45}
     h1{font-family:"Auction Cormorant Static",serif;font-style:normal;font-weight:400;font-size:clamp(58px,10cqw,140px);line-height:.82;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;margin:20px 0 35px;letter-spacing:-.045em}
