@@ -23,11 +23,12 @@
     *{box-sizing:border-box}
     [hidden]{display:none!important}
     .shell{padding:0 0 90px}
-    .intro{display:none}
+    .intro{display:block;padding:0;max-width:none}
+    .intro .eyebrow,.intro h1,.intro .description{display:none}
     .eyebrow,.count{text-transform:uppercase;letter-spacing:.17em;font-size:13px;line-height:1.45}
     h1{font-family:"Auction Cormorant Static",serif;font-style:normal;font-weight:400;font-size:clamp(58px,10cqw,140px);line-height:.82;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;margin:20px 0 35px;letter-spacing:-.045em}
     .description{font:400 14px/1.5 Inter,Arial,sans-serif;max-width:680px;margin:0}
-    .count{margin-top:38px;color:var(--muted)}
+    .count{margin:0 0 10px;color:var(--muted)}
     .controls{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:15px 0;display:flex;align-items:end;gap:18px;margin-bottom:60px}
     .controls label{display:grid;gap:8px;text-transform:uppercase;letter-spacing:.12em;font-size:11px}
     .controls input,.controls select{border:0;border-bottom:1px solid var(--ink);background:transparent;border-radius:0;padding:8px 2px;color:var(--ink);font:400 14px/1.3 Inter,Arial,sans-serif;min-width:185px}
