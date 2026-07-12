@@ -90,10 +90,11 @@ function setupViewer(){
   let gallery=[],galleryIndex=0,touchStartX=0,touchStartY=0;
   function renderImage(direction=0){if(!gallery.length)return;vimg.classList.remove('slide-left','slide-right');void vimg.offsetWidth;vimg.style.objectFit='contain';vimg.src=gallery[galleryIndex];vimg.alt=`${vtitle.textContent} by David Ambarzumjan, image ${galleryIndex+1} of ${gallery.length}`;vimg.title=`${vtitle.textContent} — David Ambarzumjan`;counter.textContent=`${galleryIndex+1} / ${gallery.length}`;prev.hidden=gallery.length<2;next.hidden=gallery.length<2;if(direction)vimg.classList.add(direction>0?'slide-left':'slide-right');}
   function move(step){if(gallery.length<2)return;galleryIndex=(galleryIndex+step+gallery.length)%gallery.length;renderImage(step);}
-  document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>{try{gallery=JSON.parse(b.dataset.images||'[]'); gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=b.dataset.title;renderImage();viewer.showModal();document.body.classList.add('viewer-open');}));
+  document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>{try{gallery=JSON.parse(b.dataset.images||'[]'); gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=b.dataset.title;renderImage();window.parent.postMessage({type:'auction-archive-lightbox',open:true},'*');viewer.showModal();document.body.classList.add('viewer-open');}));
   prev.addEventListener('click',e=>{e.stopPropagation();move(-1)});next.addEventListener('click',e=>{e.stopPropagation();move(1)});
-  function closeViewer(){viewer.close();document.body.classList.remove('viewer-open');vimg.src='';}
+  function closeViewer(){if(viewer.open)viewer.close();document.body.classList.remove('viewer-open');vimg.src='';window.parent.postMessage({type:'auction-archive-lightbox',open:false},'*');}
   viewer.querySelector('.close').addEventListener('click',closeViewer);viewer.addEventListener('click',e=>{if(e.target===viewer)closeViewer()});
+  viewer.addEventListener('cancel',e=>{e.preventDefault();closeViewer()});
   document.addEventListener('keydown',e=>{if(!viewer.open)return;if(e.key==='Escape')closeViewer();if(e.key==='ArrowLeft')move(-1);if(e.key==='ArrowRight')move(1)});
   viewer.addEventListener('touchstart',e=>{const t=e.changedTouches[0];touchStartX=t.clientX;touchStartY=t.clientY},{passive:true});
   viewer.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-touchStartX,dy=t.clientY-touchStartY;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.25)move(dx<0?1:-1)},{passive:true});
