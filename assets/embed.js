@@ -1,6 +1,9 @@
 (() => {
-  const scriptUrl = document.currentScript?.src || 'https://davidambart.github.io/david_auctions/assets/embed.js';
-  const baseUrl = new URL('../', scriptUrl);
+  const canonicalBaseUrl = 'https://auctions.brushstrokesintime.com/';
+  const scriptUrl = new URL(document.currentScript?.src || `${canonicalBaseUrl}assets/embed.js`);
+  const baseUrl = scriptUrl.hostname === 'davidambart.github.io'
+    ? new URL(canonicalBaseUrl)
+    : new URL('../', scriptUrl);
   if (!document.querySelector('link[data-auction-archive-fonts]')) {
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
