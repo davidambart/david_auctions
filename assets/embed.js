@@ -72,10 +72,10 @@
     @media(max-width:1100px) and (min-width:761px){.archive{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:760px){
       .archive{grid-template-columns:1fr}.controls{flex-wrap:wrap}.controls>label{width:100%}.controls label{flex:1}.controls input,.controls select{width:100%;min-width:0}.select-controls{width:100%}.select-controls label{flex:1;min-width:0}.reset{margin-left:auto}
-      h1{font-size:70px}.meta{grid-template-columns:minmax(0,42%) minmax(0,58%);gap:0;padding-top:20px}.meta dl{width:100%;max-width:none;min-width:0}.meta dl>div{display:flex;justify-content:flex-end;align-items:flex-start;gap:clamp(8px,1.5cqw,12px);padding:2px 0 7px}.meta dt{flex:0 0 auto;font-size:10px;line-height:1.35;padding-top:2px;white-space:nowrap;text-align:right}.meta dd{flex:0 1 auto;min-width:0;font-size:13px;line-height:1.35;text-align:right;overflow-wrap:anywhere}.meta h2{font-size:38px}.year{font-size:17px}
+      h1{font-size:70px}.meta{grid-template-columns:minmax(0,50%) minmax(0,50%);gap:0;padding-top:20px}.meta dl{width:100%;max-width:none;min-width:0}.meta dl>div{display:grid;grid-template-columns:minmax(0,35%) minmax(0,1fr);align-items:start;gap:clamp(4px,1cqw,8px);padding:2px 0 7px}.meta dt{font-size:10px;line-height:1.35;padding-top:2px;white-space:nowrap;text-align:left}.meta dd{min-width:0;font-size:13px;line-height:1.35;text-align:right;overflow-wrap:anywhere}.meta h2{font-size:38px}.year{font-size:17px}
       .gallery-nav{width:44px;height:62px;font-size:44px;background:rgba(0,0,0,.18)}.previous{left:4px}.next{right:4px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:9px}.close{right:10px;top:10px}
     }
-    @media(max-width:430px){.meta{grid-template-columns:minmax(0,42%) minmax(0,58%)}.meta dl>div{gap:6px}}
+    @media(max-width:430px){.meta{grid-template-columns:minmax(0,50%) minmax(0,50%)}.meta dl>div{gap:4px}.meta dt{font-size:9px}.meta dd{font-size:12px}}
     @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img{animation:none!important}}
   `;
 
