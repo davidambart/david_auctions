@@ -41,7 +41,7 @@
     .select-controls{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:end;gap:18px}
     .reset{margin-left:auto;background:transparent;border:0;color:var(--ink);text-transform:uppercase;letter-spacing:.12em;font-size:11px;cursor:pointer;padding:10px}
     .archive{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(65px,8cqw,125px) clamp(24px,4cqw,64px)}
-    .artwork{min-width:0}
+    .artwork{min-width:0;content-visibility:auto;contain-intrinsic-size:620px}
     .image-button{display:block;width:100%;padding:0;border:0;background:#f4f4f2;cursor:zoom-in;aspect-ratio:1/1;overflow:hidden}
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
@@ -179,6 +179,12 @@
         root.querySelector('.sort-select').value = 'latest';
         this.updateCards();
       });
+      root.querySelector('.archive').addEventListener('error', event => {
+        const image = event.target;
+        if (image.tagName !== 'IMG' || !image.dataset.fallback || image.dataset.fallbackApplied) return;
+        image.dataset.fallbackApplied = 'true';
+        image.src = image.dataset.fallback;
+      }, true);
       root.querySelector('.archive').addEventListener('click', event => {
         const button = event.target.closest('.image-button');
         if (button) this.openGallery(Number(button.dataset.index));
@@ -209,7 +215,7 @@
 
     async load() {
       try {
-        const response = await fetch(new URL('data/auctions.csv', baseUrl), {cache: 'no-store'});
+        const response = await fetch(new URL('data/auctions.csv', baseUrl));
         if (!response.ok) throw new Error(response.status);
         this.works = parseCSV(await response.text()).map(work => ({
           ...work,
@@ -243,18 +249,20 @@
         const matchesQuery = !query || work.title.toLowerCase().includes(query) || String(work.year).includes(query);
         return matchesQuery && (year === 'all' || String(work.year) === year);
       }).sort(compare);
-      root.querySelector('.archive').innerHTML = visible.map(work => this.cardHTML(work)).join('');
+      root.querySelector('.archive').innerHTML = visible.map((work, position) => this.cardHTML(work, position)).join('');
       root.querySelector('.no-results').hidden = visible.length !== 0;
     }
 
-    cardHTML(work) {
+    cardHTML(work, position) {
       const index = this.works.indexOf(work);
       const charity = work.charity ? `<div class="charity-row"><dt>Charity</dt><dd>${escapeHTML(work.charity)}</dd></div>` : '';
       const imageTitle = `${work.title}, ${work.year} — David Ambarzumjan`;
       const image = new URL(work.image, baseUrl).href;
+      const thumbnail = new URL(work.image.replace(/^assets\/images\//, 'assets/thumbnails/'), baseUrl).href;
+      const priority = position < 3;
       return `<article class="artwork">
         <button class="image-button" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
-          <img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" loading="lazy">
+          <img src="${escapeHTML(thumbnail)}" data-fallback="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${priority ? 'high' : 'low'}" decoding="async">
         </button>
         <div class="meta">
           <div><h2>${escapeHTML(work.title)}</h2><p class="year">${escapeHTML(work.year)}</p></div>

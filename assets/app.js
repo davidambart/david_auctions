@@ -7,6 +7,13 @@ const loadError=document.querySelector('#load-error');
 let data=[];
 let reportEmbedHeight=()=>{};
 
+archive.addEventListener('error',event=>{
+  const image=event.target;
+  if(image.tagName!=='IMG'||!image.dataset.fallback||image.dataset.fallbackApplied)return;
+  image.dataset.fallbackApplied='true';
+  image.src=image.dataset.fallback;
+},true);
+
 function setupEmbedHeight(){
   if(window.self===window.top)return;
   let framePending=false;
@@ -66,13 +73,15 @@ function auctionResultEuro(w){
   const rate=usdPerEuro[w.auctionEndISO];
   return rate?Math.round(amount/rate*100)/100:amount;
 }
-function card(w){
+function card(w,position){
   const charity=w.charity?`<div class="charity-row"><dt>Charity</dt><dd>${esc(w.charity)}</dd></div>`:'';
   const imgs=JSON.stringify(w.images).replace(/'/g,'&#39;');
   const imageTitle=`${w.title}, ${w.year} — David Ambarzumjan`;
+  const thumbnail=w.image.replace(/^assets\/images\//,'assets/thumbnails/');
+  const priority=position<3;
   return `<article class="artwork" data-title="${esc(w.title.toLowerCase())}" data-year="${esc(w.year)}" data-auction-date="${esc(w.auctionEndISO)}" data-result-eur="${auctionResultEuro(w)}" data-id="${esc(w.id)}">
     <button class="image-button" type="button" aria-label="View ${esc(w.title)} image gallery" data-images='${imgs}' data-title="${esc(w.title)}">
-      <img src="${esc(w.image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" loading="lazy">
+      <img src="${esc(thumbnail)}" data-fallback="${esc(w.image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" width="800" height="800" loading="${priority?'eager':'lazy'}" fetchpriority="${priority?'high':'low'}" decoding="async">
     </button>
     <div class="meta">
       <div><h2>${esc(w.title)}</h2><p class="year">${esc(w.year)}</p></div>
@@ -116,7 +125,7 @@ reportEmbedHeight();
 }
 async function init(){
   try{
-    const response=await fetch('data/auctions.csv',{cache:'no-store'}); if(!response.ok) throw new Error(response.status);
+    const response=await fetch('data/auctions.csv'); if(!response.ok) throw new Error(response.status);
     data=parseCSV(await response.text()).map(w=>({...w,images:(w.images||w.image).split('|').map(x=>x.trim()).filter(Boolean)}));
     data.sort((a,b)=>String(b.auctionEndISO).localeCompare(String(a.auctionEndISO))||Number(a.id)-Number(b.id));
     const years=[...new Set(data.map(w=>String(w.year)))].sort((a,b)=>Number(b)-Number(a)); years.forEach(y=>yearSelect.insertAdjacentHTML('beforeend',`<option value="${esc(y)}">${esc(y)}</option>`));
