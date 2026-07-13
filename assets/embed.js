@@ -1,6 +1,13 @@
 (() => {
   const scriptUrl = document.currentScript?.src || 'https://davidambart.github.io/david_auctions/assets/embed.js';
   const baseUrl = new URL('../', scriptUrl);
+  if (!document.querySelector('link[data-auction-archive-fonts]')) {
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500;600&display=swap';
+    fontLink.dataset.auctionArchiveFonts = '';
+    document.head.appendChild(fontLink);
+  }
 
   const usdPerEuro = {
     '2018-05-17': 1.1805,
@@ -16,9 +23,6 @@
   };
 
   const styles = `
-    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
-    @font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:400;font-display:swap;src:url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3umX5slCNuHLi8bLeY9MK7whWMhyjypVO7abI26QOD_v86KnTOig.woff2") format("woff2")}
-    @font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:500;font-display:swap;src:url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3umX5slCNuHLi8bLeY9MK7whWMhyjypVO7abI26QOD_s06KnTOig.woff2") format("woff2")}
     :host{--ink:#111;--muted:#777;--line:#ddd;--paper:#fff;--pad:clamp(20px,4cqw,64px);display:block;width:100%;container-type:inline-size;color:var(--ink);background:var(--paper);font:14px Inter,Arial,sans-serif}
     *{box-sizing:border-box}
     [hidden]{display:none!important}
@@ -26,7 +30,7 @@
     .intro{display:block;padding:0;max-width:none}
     .intro .eyebrow,.intro h1,.intro .description{display:none}
     .eyebrow,.count{text-transform:uppercase;letter-spacing:.17em;font-size:13px;line-height:1.45}
-    h1{font-family:"Cormorant Garamond",serif;font-style:normal;font-weight:400;font-size:clamp(58px,10cqw,140px);line-height:.82;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;margin:20px 0 35px;letter-spacing:-.045em}
+    h1{font:400 clamp(58px,10cqw,140px)/.82 "Cormorant Garamond",Georgia,serif;margin:20px 0 35px;letter-spacing:-.045em}
     .description{font:400 14px/1.5 Inter,Arial,sans-serif;max-width:680px;margin:0}
     .count{margin:0 0 10px;color:var(--muted)}
     .controls{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:15px 0;display:flex;align-items:end;gap:18px;margin-bottom:60px}
@@ -40,7 +44,7 @@
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
     .meta{display:grid;grid-template-columns:1fr auto;gap:30px;padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
-    .meta h2{font-family:"Cormorant Garamond",serif;font-style:normal;font-weight:500;font-size:clamp(27px,3cqw,42px);line-height:1;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;margin:0}
+    .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0}
     .year{margin:8px 0 0;color:var(--muted)}
     dl{margin:0;min-width:180px}
     dl div{display:flex;justify-content:space-between;gap:20px;padding:2px 0 9px}
