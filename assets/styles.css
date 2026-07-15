@@ -29,3 +29,34 @@ body>main{padding-top:1px}
 .viewer-frame img{width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center}
 .select-controls{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:end;gap:18px}
 @media(max-width:760px){.select-controls{width:100%}.select-controls label{flex:1;min-width:0}}
+
+/* Keep the sticky archive filters compact on phones. */
+@media(max-width:760px){
+  .controls{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:
+      "search reset"
+      "selects selects";
+    align-items:end;
+    gap:9px 14px;
+    padding:9px 0 10px;
+    margin-bottom:34px;
+  }
+  .controls>label{grid-area:search;min-width:0}
+  .controls .select-controls{grid-area:selects;gap:12px}
+  .controls>button{
+    grid-area:reset;
+    align-self:end;
+    margin:0 0 1px;
+    padding:6px 2px 7px;
+  }
+  .controls label{gap:3px;font-size:9px;letter-spacing:.1em}
+  .controls input,
+  .controls select{
+    min-height:32px;
+    padding:4px 1px;
+    font-size:13px;
+    line-height:1.2;
+  }
+}
