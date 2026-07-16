@@ -29,6 +29,10 @@
     *{box-sizing:border-box}
     [hidden]{display:none!important}
     .shell{padding:0 0 90px}
+    .archive-loading{min-height:clamp(150px,18cqw,250px);display:grid;place-items:center}
+    .archive-spinner{width:34px;aspect-ratio:1;border:1.5px solid rgba(94,153,149,.28);border-top-color:#19575c;border-radius:50%;animation:archiveSpin .78s linear infinite}
+    .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @keyframes archiveSpin{to{transform:rotate(360deg)}}
     .intro{display:block;padding:0;max-width:none}
     .intro .eyebrow,.intro h1,.intro .description{display:none}
     .eyebrow,.count{text-transform:uppercase;letter-spacing:.17em;font-size:13px;line-height:1.45}
@@ -84,7 +88,7 @@
       .gallery-nav{width:44px;height:62px;font-size:44px;background:rgba(0,0,0,.18)}.previous{left:4px}.next{right:4px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:9px}.close{right:10px;top:10px}
     }
     @media(max-width:430px){.meta{grid-template-columns:minmax(0,50%) minmax(0,50%)}.meta dl>div{gap:4px}.meta dt{font-size:9px}.meta dd{font-size:12px}}
-    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img{animation:none!important}}
+    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.archive-spinner{animation:none!important}}
   `;
 
   function parseCSV(text) {
@@ -146,14 +150,18 @@
     renderShell() {
       this.shadowRoot.innerHTML = `
         <style>${styles}</style>
-        <main class="shell">
+        <main class="shell" aria-busy="true">
           <header class="intro">
             <p class="eyebrow">Brushstrokes in Time</p>
             <h1>Auction Archive</h1>
             <p class="description">A chronological archive of miniature original paintings and their final auction results.</p>
             <p class="count" aria-live="polite"></p>
           </header>
-          <section class="controls" aria-label="Archive filters">
+          <div class="archive-loading" role="status" aria-live="polite">
+            <span class="archive-spinner" aria-hidden="true"></span>
+            <span class="visually-hidden">Loading auction archive</span>
+          </div>
+          <section class="controls" aria-label="Archive filters" hidden>
             <label>Search<input class="search" placeholder="Title or year" type="search"></label>
             <div class="select-controls">
               <label>Year<select class="year-select"><option value="all">All years</option></select></label>
@@ -161,7 +169,7 @@
             </div>
             <button class="reset" type="button">Reset</button>
           </section>
-          <section class="archive" aria-live="polite"></section>
+          <section class="archive" aria-live="polite" hidden></section>
           <p class="empty no-results" hidden>No works match those filters.</p>
           <p class="empty load-error" hidden>Archive data could not be loaded.</p>
         </main>
@@ -221,6 +229,14 @@
       });
     }
 
+    setLoaded() {
+      const root = this.shadowRoot;
+      root.querySelector('.archive-loading').hidden = true;
+      root.querySelector('.controls').hidden = false;
+      root.querySelector('.archive').hidden = false;
+      root.querySelector('.shell').setAttribute('aria-busy', 'false');
+    }
+
     async load() {
       try {
         const response = await fetch(new URL('data/auctions.csv', baseUrl));
@@ -235,10 +251,14 @@
         years.forEach(year => yearSelect.insertAdjacentHTML('beforeend', `<option value="${escapeHTML(year)}">${escapeHTML(year)}</option>`));
         const numericYears = this.works.map(work => Number(work.year)).filter(Number.isFinite);
         this.shadowRoot.querySelector('.count').textContent = `${this.works.length} works · ${Math.min(...numericYears)}–${Math.max(...numericYears)}`;
+        this.setLoaded();
         this.updateCards();
       } catch (error) {
         console.error('Auction archive could not load:', error);
-        this.shadowRoot.querySelector('.load-error').hidden = false;
+        const root = this.shadowRoot;
+        root.querySelector('.archive-loading').hidden = true;
+        root.querySelector('.shell').setAttribute('aria-busy', 'false');
+        root.querySelector('.load-error').hidden = false;
       }
     }
 
