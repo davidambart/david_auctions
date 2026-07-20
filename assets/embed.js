@@ -195,12 +195,6 @@
         root.querySelector('.sort-select').value = 'latest';
         this.updateCards();
       });
-      root.querySelector('.archive').addEventListener('error', event => {
-        const image = event.target;
-        if (image.tagName !== 'IMG' || !image.dataset.fallback || image.dataset.fallbackApplied) return;
-        image.dataset.fallbackApplied = 'true';
-        image.src = image.dataset.fallback;
-      }, true);
       root.querySelector('.archive').addEventListener('click', event => {
         const button = event.target.closest('.image-button');
         if (button) this.openGallery(Number(button.dataset.index));
@@ -286,11 +280,10 @@
       const charity = work.charity ? `<div class="charity-row"><dt>Charity</dt><dd>${escapeHTML(work.charity)}</dd></div>` : '';
       const imageTitle = `${work.title}, ${work.year} — David Ambarzumjan`;
       const image = new URL(work.image, baseUrl).href;
-      const thumbnail = new URL(work.image.replace(/^assets\/images\//, 'assets/thumbnails/'), baseUrl).href;
       const priority = position < 3;
       return `<article class="artwork">
         <button class="image-button" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
-          <img src="${escapeHTML(thumbnail)}" data-fallback="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${priority ? 'high' : 'low'}" decoding="async">
+          <img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${priority ? 'high' : 'low'}" decoding="async">
         </button>
         <div class="meta">
           <div><h2>${escapeHTML(work.title)}</h2><p class="year">${escapeHTML(work.year)}</p></div>
