@@ -141,6 +141,8 @@
       this.touchStartY = 0;
       this.previousBodyOverflow = '';
       this.galleryImageCache = new Map();
+      this.galleryPreloadObserver = null;
+      this.galleryOpenRequest = 0;
       this.galleryRequest = 0;
     }
 
@@ -149,6 +151,10 @@
       this.renderShell();
       this.bindEvents();
       this.load();
+    }
+
+    disconnectedCallback() {
+      this.galleryPreloadObserver?.disconnect();
     }
 
     renderShell() {
@@ -287,8 +293,10 @@
         const matchesQuery = !query || work.title.toLowerCase().includes(query) || String(work.year).includes(query);
         return matchesQuery && (year === 'all' || String(work.year) === year);
       }).sort(compare);
+      this.galleryPreloadObserver?.disconnect();
       root.querySelector('.archive').innerHTML = visible.map((work, position) => this.cardHTML(work, position)).join('');
       root.querySelector('.no-results').hidden = visible.length !== 0;
+      this.preloadVisibleGalleries();
     }
 
     cardHTML(work, position) {
@@ -331,29 +339,36 @@
 
     preloadWorkGallery(workIndex) {
       const work = this.works[workIndex];
-      if (work) this.preloadGalleryImage(work.images[0]);
+      return work ? Promise.all(work.images.map(image => this.preloadGalleryImage(image))) : Promise.resolve([]);
     }
 
-    preloadGallery() {
-      this.gallery.forEach(image => this.preloadGalleryImage(image));
-    }
-
-    preloadGalleryNeighbors() {
-      if (this.gallery.length < 2) return;
-      [-1, 1].forEach(offset => {
-        const index = (this.galleryIndex + offset + this.gallery.length) % this.gallery.length;
-        this.preloadGalleryImage(this.gallery[index]);
+    preloadVisibleGalleries() {
+      if (!('IntersectionObserver' in window)) return;
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          this.preloadWorkGallery(Number(entry.target.dataset.index));
+          observer.unobserve(entry.target);
+        });
+      }, {rootMargin: '600px 0px'});
+      this.galleryPreloadObserver = observer;
+      this.shadowRoot.querySelectorAll('.image-button').forEach(button => {
+        observer.observe(button);
       });
     }
 
-    openGallery(workIndex) {
+    async openGallery(workIndex) {
       const work = this.works[workIndex];
       if (!work || !work.images.length) return;
-      this.gallery = [...new Set(work.images)];
+      const openRequest = ++this.galleryOpenRequest;
+      const gallery = [...new Set(work.images)];
+      await Promise.all(gallery.map(image => this.preloadGalleryImage(image)));
+      if (openRequest !== this.galleryOpenRequest) return;
+      this.gallery = gallery;
       this.galleryIndex = 0;
-      this.preloadGallery();
       this.shadowRoot.querySelector('.viewer-caption p').textContent = work.title;
-      this.renderGalleryImage();
+      await this.renderGalleryImage();
+      if (openRequest !== this.galleryOpenRequest) return;
       this.previousBodyOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       this.shadowRoot.querySelector('.viewer').showModal();
@@ -386,7 +401,6 @@
       frame.classList.remove('is-loading');
       void image.offsetWidth;
       if (direction) image.classList.add(direction > 0 ? 'slide-left' : 'slide-right');
-      this.preloadGalleryNeighbors();
     }
 
     moveGallery(step) {
@@ -397,6 +411,7 @@
 
     closeGallery() {
       const viewer = this.shadowRoot.querySelector('.viewer');
+      this.galleryOpenRequest++;
       this.galleryRequest++;
       if (viewer.open) viewer.close();
       const frame = this.shadowRoot.querySelector('.viewer-frame');
