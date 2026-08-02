@@ -62,8 +62,10 @@
     dialog{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#111;color:#fff;overflow:hidden;touch-action:pan-y}
     dialog::backdrop{background:#111}
     .viewer-content{width:100%;height:100%;margin:0;display:grid;grid-template-rows:minmax(0,1fr) 62px}
-    .viewer-frame{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .viewer-frame{position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .viewer-frame.is-loading::after{content:"";position:absolute;width:34px;aspect-ratio:1;border:1.5px solid rgba(255,255,255,.28);border-top-color:#fff;border-radius:50%;animation:archiveSpin .78s linear infinite}
     .viewer-frame img{display:block;width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
+    .viewer-frame.is-loading img{visibility:hidden}
     .viewer-caption{height:62px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 24px}
     .viewer-caption p{grid-column:2;margin:0;font:400 22px "Cormorant Garamond",Georgia,serif;text-align:center}
     .image-counter{grid-column:3;justify-self:end;font-size:10px;letter-spacing:.14em;color:#bbb}
@@ -138,6 +140,8 @@
       this.touchStartX = 0;
       this.touchStartY = 0;
       this.previousBodyOverflow = '';
+      this.galleryImageCache = new Map();
+      this.galleryRequest = 0;
     }
 
     connectedCallback() {
@@ -199,6 +203,18 @@
         const button = event.target.closest('.image-button');
         if (button) this.openGallery(Number(button.dataset.index));
       });
+      root.querySelector('.archive').addEventListener('pointerover', event => {
+        const button = event.target.closest('.image-button');
+        if (button) this.preloadWorkGallery(Number(button.dataset.index));
+      });
+      root.querySelector('.archive').addEventListener('focusin', event => {
+        const button = event.target.closest('.image-button');
+        if (button) this.preloadWorkGallery(Number(button.dataset.index));
+      });
+      root.querySelector('.archive').addEventListener('pointerdown', event => {
+        const button = event.target.closest('.image-button');
+        if (button) this.preloadWorkGallery(Number(button.dataset.index));
+      }, {passive: true});
       root.querySelector('.close').addEventListener('click', () => this.closeGallery());
       root.querySelector('.previous').addEventListener('click', () => this.moveGallery(-1));
       root.querySelector('.next').addEventListener('click', () => this.moveGallery(1));
@@ -297,11 +313,45 @@
       </article>`;
     }
 
+    preloadGalleryImage(url) {
+      if (this.galleryImageCache.has(url)) return this.galleryImageCache.get(url);
+      const preload = new Promise(resolve => {
+        const image = new Image();
+        image.decoding = 'async';
+        image.onload = () => {
+          const decoded = typeof image.decode === 'function' ? image.decode().catch(() => {}) : Promise.resolve();
+          decoded.then(() => resolve(true));
+        };
+        image.onerror = () => resolve(false);
+        image.src = url;
+      });
+      this.galleryImageCache.set(url, preload);
+      return preload;
+    }
+
+    preloadWorkGallery(workIndex) {
+      const work = this.works[workIndex];
+      if (work) this.preloadGalleryImage(work.images[0]);
+    }
+
+    preloadGallery() {
+      this.gallery.forEach(image => this.preloadGalleryImage(image));
+    }
+
+    preloadGalleryNeighbors() {
+      if (this.gallery.length < 2) return;
+      [-1, 1].forEach(offset => {
+        const index = (this.galleryIndex + offset + this.gallery.length) % this.gallery.length;
+        this.preloadGalleryImage(this.gallery[index]);
+      });
+    }
+
     openGallery(workIndex) {
       const work = this.works[workIndex];
       if (!work || !work.images.length) return;
       this.gallery = [...new Set(work.images)];
       this.galleryIndex = 0;
+      this.preloadGallery();
       this.shadowRoot.querySelector('.viewer-caption p').textContent = work.title;
       this.renderGalleryImage();
       this.previousBodyOverflow = document.body.style.overflow;
@@ -309,18 +359,34 @@
       this.shadowRoot.querySelector('.viewer').showModal();
     }
 
-    renderGalleryImage(direction = 0) {
+    async renderGalleryImage(direction = 0) {
       const root = this.shadowRoot;
       const image = root.querySelector('.viewer-frame img');
-      image.classList.remove('slide-left', 'slide-right');
-      void image.offsetWidth;
-      image.src = this.gallery[this.galleryIndex];
+      const frame = root.querySelector('.viewer-frame');
+      const request = ++this.galleryRequest;
+      const source = this.gallery[this.galleryIndex];
+      const index = this.galleryIndex;
       const title = root.querySelector('.viewer-caption p').textContent;
-      image.alt = `${title} by David Ambarzumjan, image ${this.galleryIndex + 1} of ${this.gallery.length}`;
-      root.querySelector('.image-counter').textContent = `${this.galleryIndex + 1} / ${this.gallery.length}`;
+      root.querySelector('.image-counter').textContent = `${index + 1} / ${this.gallery.length}`;
       root.querySelector('.previous').hidden = this.gallery.length < 2;
       root.querySelector('.next').hidden = this.gallery.length < 2;
+      image.classList.remove('slide-left', 'slide-right');
+      frame.classList.add('is-loading');
+      image.hidden = true;
+      image.removeAttribute('src');
+      const loaded = await this.preloadGalleryImage(source);
+      if (request !== this.galleryRequest) return;
+      if (!loaded) {
+        frame.classList.remove('is-loading');
+        return;
+      }
+      image.src = source;
+      image.alt = `${title} by David Ambarzumjan, image ${index + 1} of ${this.gallery.length}`;
+      image.hidden = false;
+      frame.classList.remove('is-loading');
+      void image.offsetWidth;
       if (direction) image.classList.add(direction > 0 ? 'slide-left' : 'slide-right');
+      this.preloadGalleryNeighbors();
     }
 
     moveGallery(step) {
@@ -331,8 +397,13 @@
 
     closeGallery() {
       const viewer = this.shadowRoot.querySelector('.viewer');
+      this.galleryRequest++;
       if (viewer.open) viewer.close();
-      this.shadowRoot.querySelector('.viewer-frame img').removeAttribute('src');
+      const frame = this.shadowRoot.querySelector('.viewer-frame');
+      frame.classList.remove('is-loading');
+      const image = frame.querySelector('img');
+      image.hidden = true;
+      image.removeAttribute('src');
       document.body.style.overflow = this.previousBodyOverflow;
     }
   }
