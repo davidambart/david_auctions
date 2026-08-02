@@ -59,32 +59,35 @@
     dd{margin:0;font-size:11px;text-align:right}
     .charity-row dd{line-height:1.45}
     .empty{text-align:center;padding:80px 0;color:var(--muted)}
-    :host dialog.viewer{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#fff!important;color:#111;overflow:hidden;touch-action:none}
-    :host dialog.viewer::backdrop{background:#fff!important}
-    .viewer-content{width:100%;height:100%;margin:0}
-    .viewer-frame{position:relative;width:100%;height:100%;padding:56px clamp(18px,6vw,104px) clamp(92px,13vh,132px);display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .viewer-frame.is-loading::after{content:"";position:absolute;width:34px;aspect-ratio:1;border:1.5px solid rgba(17,17,17,.16);border-top-color:#374151;border-radius:50%;animation:archiveSpin .78s linear infinite}
-    .viewer-frame img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none;position:relative;z-index:1;will-change:transform,opacity;transform:translate3d(var(--viewer-drag-x,0),var(--viewer-drag-y,0),0);opacity:var(--viewer-drag-opacity,1)}
-    .gallery-outgoing{display:block;position:absolute;inset:56px clamp(18px,6vw,104px) clamp(92px,13vh,132px);z-index:2;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none}
+    :host dialog.viewer{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:#111;overflow:hidden;touch-action:none}
+    :host dialog.viewer::backdrop{background:rgba(255,255,255,.95)}
+    .viewer-content{width:100%;height:100%;margin:0;display:grid;grid-template-rows:minmax(0,1fr) 62px}
+    .viewer-frame{position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .viewer-frame.is-loading::after{content:"";position:absolute;width:34px;aspect-ratio:1;border:1.5px solid rgba(0,0,0,.12);border-top-color:#374151;border-radius:50%;animation:archiveSpin .78s linear infinite}
+    .viewer-frame img{display:block;width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none;position:relative;z-index:1;will-change:transform,opacity;transform:translate3d(var(--viewer-drag-x,0),var(--viewer-drag-y,0),0);opacity:var(--viewer-drag-opacity,1)}
+    .gallery-outgoing{display:block;position:absolute;inset:0;z-index:2;width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none}
     .viewer-frame.is-loading img{visibility:hidden}
-    .viewer-toolbar{position:fixed;inset:0 0 auto;z-index:4;display:flex;height:48px;align-items:center;justify-content:space-between;background:#fff!important;border-bottom:1px solid rgba(17,17,17,.12);color:#374151}
-    .image-counter{padding:0 16px;font-size:12px;line-height:48px;letter-spacing:.12em;font-variant-numeric:tabular-nums;text-transform:uppercase}
-    .close,.gallery-nav{border:0;outline:none!important;box-shadow:none!important;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
-    .close{position:relative;z-index:1;display:grid;width:48px;height:48px;place-items:center;border-radius:50%!important;background:transparent!important;color:#374151}
-    .close svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:square}
-    .gallery-nav{position:fixed;z-index:3;bottom:clamp(24px,4vh,48px);display:grid;width:44px;height:44px;place-items:center;border:1px solid rgba(17,17,17,.16);border-radius:50%!important;background:#fff!important;color:#374151;transition:background .15s ease,color .15s ease,border-color .15s ease}
-    .gallery-nav svg{display:block;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:square;stroke-linejoin:miter}
-    .gallery-nav:hover,.gallery-nav:active{background:#f1f3f2!important;color:#111}
+    .viewer-caption{height:62px;display:grid;place-items:center;padding:0 24px;color:#111}
+    .viewer-caption p{margin:0;font:400 22px "Cormorant Garamond",Georgia,serif;text-align:center}
+    .viewer-toolbar{position:fixed;inset:0 0 auto;z-index:4;display:flex;height:47px;align-items:center;justify-content:space-between;background:rgba(255,255,255,.75);border-bottom:1px solid rgba(0,0,0,.1);color:#000}
+    .image-counter{padding:0 5px;font-size:17px;line-height:46px;font-variant-numeric:tabular-nums}
+    .close,.gallery-nav{border:0;outline:none!important;box-shadow:none!important;cursor:pointer;padding:0;color:#000;-webkit-tap-highlight-color:transparent}
+    .close{position:relative;z-index:1;display:grid;width:46px;height:46px;place-items:center;border-radius:0!important;background:transparent!important;color:#374151}
+    .close svg{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:square}
+    .gallery-nav{position:fixed;z-index:3;top:50%;display:grid;width:40px;height:40px;place-items:center;border-radius:0!important;background:transparent!important;color:#000;transform:translateY(-50%);transition:background .15s ease,color .15s ease}
+    .gallery-nav svg{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:square;stroke-linejoin:miter}
+    .gallery-nav:hover,.gallery-nav:active{background:rgba(255,255,255,.55)!important}
     .close:hover,.close:active{color:#111}
-    :host dialog.viewer .viewer-toolbar button.close:focus,:host dialog.viewer .viewer-toolbar button.close:focus-visible,:host dialog.viewer button.gallery-nav:focus,:host dialog.viewer button.gallery-nav:focus-visible{outline:none!important;border-radius:50%!important;box-shadow:none!important}
-    .previous{left:clamp(18px,3vw,40px)}.next{right:clamp(18px,3vw,40px)}
+    :host dialog.viewer .viewer-toolbar button.close:focus,:host dialog.viewer .viewer-toolbar button.close:focus-visible,:host dialog.viewer button.gallery-nav:focus,:host dialog.viewer button.gallery-nav:focus-visible{outline:none!important;border-radius:0!important;box-shadow:none!important}
+    .previous{left:12px}.next{right:12px}
     dialog.viewer[open]:not(.is-closing)::backdrop{animation:archiveBackdropIn .35s ease backwards}
-    dialog.viewer[open]:not(.is-closing) .viewer-content{animation:archiveContentIn .2s ease .1s both}
-    dialog.viewer[open]:not(.is-closing) .viewer-toolbar,dialog.viewer[open]:not(.is-closing) .gallery-nav{animation:archiveInterfaceIn .25s ease .1s backwards}
+    dialog.viewer[open]:not(.is-closing) .viewer-frame{animation:archiveContentIn .2s ease .1s both}
+    dialog.viewer[open]:not(.is-closing) .viewer-caption,dialog.viewer[open]:not(.is-closing) .viewer-toolbar,dialog.viewer[open]:not(.is-closing) .gallery-nav{animation:archiveInterfaceIn .25s ease .1s backwards}
     dialog.viewer.is-closing::backdrop{animation:archiveBackdropOut .35s ease forwards}
-    dialog.viewer.is-closing .viewer-content{animation:archiveContentOutDown .2s ease both}
-    dialog.viewer.is-closing-up .viewer-content{animation-name:archiveContentOutUp}
-    dialog.viewer.is-closing .viewer-toolbar,dialog.viewer.is-closing .gallery-nav{animation:archiveInterfaceOut .15s ease forwards}
+    dialog.viewer.is-closing .viewer-frame{animation:archiveContentOutDown .2s ease both}
+    dialog.viewer.is-closing-up .viewer-frame{animation-name:archiveContentOutUp}
+    dialog.viewer.is-closing .viewer-caption,dialog.viewer.is-closing .viewer-toolbar,dialog.viewer.is-closing .gallery-nav{animation:archiveInterfaceOut .15s ease forwards}
+    dialog.viewer.is-idle:not(.is-closing) .viewer-toolbar,dialog.viewer.is-idle:not(.is-closing) .gallery-nav{pointer-events:none;animation:archiveInterfaceOut .15s ease-out forwards}
     .viewer-frame.is-dragging img{transition:none}
     .viewer-frame.is-settling img{transition:transform .22s cubic-bezier(.22,.61,.36,1),opacity .22s ease}
     .gallery-enter-next{animation:archiveGalleryEnterNext .3s cubic-bezier(.22,.61,.36,1) both!important}
@@ -93,10 +96,10 @@
     .gallery-outgoing-previous{animation:archiveGalleryExitPrevious .24s cubic-bezier(.4,0,1,1) both}
     :host([data-theme="dark"]) dialog.viewer,:host-context(html[data-da-theme="dark"]) dialog.viewer{background:#000 url("${new URL('assets/starfield.svg', baseUrl).href}") 0 0/700px 700px repeat!important;color:#c1c8c6}
     :host([data-theme="dark"]) dialog.viewer::backdrop,:host-context(html[data-da-theme="dark"]) dialog.viewer::backdrop{background:#000!important}
-    :host([data-theme="dark"]) .viewer-toolbar,:host-context(html[data-da-theme="dark"]) .viewer-toolbar{background:#000!important;border-color:#303736;color:#b7c2c0}
+    :host([data-theme="dark"]) .viewer-toolbar,:host-context(html[data-da-theme="dark"]) .viewer-toolbar{background:rgba(0,0,0,.75)!important;border-color:#303736;color:#b7c2c0}
     :host([data-theme="dark"]) .close,:host([data-theme="dark"]) .gallery-nav,:host-context(html[data-da-theme="dark"]) .close,:host-context(html[data-da-theme="dark"]) .gallery-nav{color:#b7c2c0}
-    :host([data-theme="dark"]) .gallery-nav,:host-context(html[data-da-theme="dark"]) .gallery-nav{background:#101514!important;border-color:#303736}
-    :host([data-theme="dark"]) .gallery-nav:hover,:host([data-theme="dark"]) .gallery-nav:active,:host-context(html[data-da-theme="dark"]) .gallery-nav:hover,:host-context(html[data-da-theme="dark"]) .gallery-nav:active{background:#1a2422!important;color:#d7e1de}
+    :host([data-theme="dark"]) .gallery-nav,:host-context(html[data-da-theme="dark"]) .gallery-nav{background:transparent!important}
+    :host([data-theme="dark"]) .gallery-nav:hover,:host([data-theme="dark"]) .gallery-nav:active,:host-context(html[data-da-theme="dark"]) .gallery-nav:hover,:host-context(html[data-da-theme="dark"]) .gallery-nav:active{background:rgba(0,0,0,.5)!important;color:#d7e1de}
     :host([data-theme="dark"]) .viewer-frame.is-loading::after,:host-context(html[data-da-theme="dark"]) .viewer-frame.is-loading::after{border-color:rgba(193,200,198,.18);border-top-color:#a3bfbc}
     @keyframes archiveBackdropIn{from{opacity:0}to{opacity:1}}
     @keyframes archiveBackdropOut{to{opacity:0}}
@@ -120,10 +123,10 @@
       .controls input,.controls select{width:100%;min-width:0;min-height:32px;padding:4px 1px;font-size:13px;line-height:1.2}
       .select-controls label{flex:1;min-width:0}
       h1{font-size:70px}.meta{grid-template-columns:minmax(0,50%) minmax(0,50%);gap:0;padding-top:20px}.meta dl{width:100%;max-width:none;min-width:0}.meta dl>div{display:grid;grid-template-columns:minmax(0,35%) minmax(0,1fr);align-items:start;gap:clamp(4px,1cqw,8px);padding:2px 0 7px}.meta dt{font-size:10px;line-height:1.35;padding-top:2px;white-space:nowrap;text-align:left}.meta dd{min-width:0;font-size:13px;line-height:1.35;text-align:right;overflow-wrap:anywhere}.meta h2{font-size:38px}.year{font-size:17px}
-      .viewer-frame{padding:52px 12px 82px}.gallery-nav{bottom:18px;width:42px;height:42px}.previous{left:12px}.next{right:12px}.image-counter{padding:0 13px;font-size:11px}
+      .gallery-nav{width:40px;height:40px}.previous{left:12px}.next{right:12px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:15px}
     }
     @media(max-width:430px){.meta{grid-template-columns:minmax(0,50%) minmax(0,50%)}.meta dl>div{gap:4px}.meta dt{font-size:9px}.meta dd{font-size:12px}.meta dl>div:first-child{grid-template-columns:58px minmax(0,1fr)!important;column-gap:6px!important}.meta dl>div:first-child dd{white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important}}
-    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.gallery-outgoing,.archive-spinner,dialog.viewer::backdrop,dialog.viewer .viewer-content,dialog.viewer .viewer-toolbar,dialog.viewer .gallery-nav{animation:none!important}}
+    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.gallery-outgoing,.archive-spinner,dialog.viewer::backdrop,dialog.viewer .viewer-frame,dialog.viewer .viewer-caption,dialog.viewer .viewer-toolbar,dialog.viewer .gallery-nav{animation:none!important}}
   `;
 
   function parseCSV(text) {
@@ -178,6 +181,7 @@
       this.galleryClosing = false;
       this.galleryMoving = false;
       this.galleryTitle = '';
+      this.viewerIdleTimer = 0;
       this.viewerGesture = null;
       this.viewerClickSuppressedUntil = 0;
       this.viewerSettleTimer = 0;
@@ -197,6 +201,7 @@
       this.galleryPreloadObserver?.disconnect();
       this.themeObserver?.disconnect();
       window.clearTimeout(this.viewerSettleTimer);
+      window.clearTimeout(this.viewerIdleTimer);
     }
 
     renderShell() {
@@ -228,7 +233,7 @@
         <dialog class="viewer">
           <div class="viewer-toolbar"><span class="image-counter" aria-live="polite"></span><button aria-label="Close gallery" class="close" type="button"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="m19.5 4.5-15 15M4.5 4.5l15 15"></path></svg></button></div>
           <button aria-label="Previous image" class="gallery-nav previous" type="button"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15 3 6 12l9 9"></path></svg></button>
-          <figure class="viewer-content"><div class="viewer-frame"><img alt=""></div></figure>
+          <figure class="viewer-content"><div class="viewer-frame"><img alt=""></div><figcaption class="viewer-caption"><p></p></figcaption></figure>
           <button aria-label="Next image" class="gallery-nav next" type="button"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 3l9 9-9 9"></path></svg></button>
         </dialog>`;
     }
@@ -506,6 +511,7 @@
       this.gallery = gallery;
       this.galleryIndex = 0;
       this.galleryTitle = work.title;
+      this.shadowRoot.querySelector('.viewer-caption p').textContent = work.title;
       await this.preloadGalleryImage(gallery[0]);
       if (openRequest !== this.galleryOpenRequest) return;
       await this.renderGalleryImage();
@@ -573,6 +579,11 @@
       const viewer = this.shadowRoot.querySelector('.viewer');
       if (!viewer.open || this.galleryClosing) return;
       viewer.classList.remove('is-idle');
+      window.clearTimeout(this.viewerIdleTimer);
+      if (this.prefersReducedMotion()) return;
+      this.viewerIdleTimer = window.setTimeout(() => {
+        if (viewer.open && !this.galleryClosing) viewer.classList.add('is-idle');
+      }, 2500);
     }
 
     closeGallery(direction = 'down') {
@@ -584,6 +595,7 @@
       this.galleryMoving = false;
       this.viewerGesture = null;
       window.clearTimeout(this.viewerSettleTimer);
+      window.clearTimeout(this.viewerIdleTimer);
       this.clearViewerDrag();
       viewer.classList.remove('is-idle', 'is-closing-up');
       viewer.classList.add('is-closing');
