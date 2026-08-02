@@ -60,9 +60,10 @@
     .charity-row dd{line-height:1.45}
     .empty{text-align:center;padding:80px 0;color:var(--muted)}
     :host dialog.viewer{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:#111;overflow:hidden;touch-action:pan-y}
-    :host dialog.viewer::backdrop{background:rgba(255,255,255,.95)}
-    .viewer-content{width:100%;height:100%;margin:0;display:grid;grid-template-rows:minmax(0,1fr) 62px}
-    .viewer-frame{position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    :host dialog.viewer::backdrop{background:transparent}
+    .viewer-starfield{display:none;position:absolute;inset:0;z-index:0;pointer-events:none}
+    .viewer-content{position:relative;z-index:1;width:100%;height:100%;margin:0;display:grid;grid-template-rows:minmax(0,1fr) 62px}
+    .viewer-frame{position:relative;min-width:0;min-height:0;padding:47px 60px 0;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .viewer-frame.is-loading::after{content:"";position:absolute;width:34px;aspect-ratio:1;border:1.5px solid rgba(0,0,0,.12);border-top-color:#374151;border-radius:50%;animation:archiveSpin .78s linear infinite}
     .viewer-frame img{display:block;width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
     .viewer-frame.is-loading img{visibility:hidden}
@@ -85,10 +86,10 @@
     dialog.viewer.is-closing::backdrop{animation:archiveBackdropOut .35s ease forwards}
     dialog.viewer.is-closing .viewer-frame{animation:archiveContentOutDown .2s ease both}
     dialog.viewer.is-closing .viewer-caption,dialog.viewer.is-closing .viewer-toolbar,dialog.viewer.is-closing .gallery-nav{animation:archiveInterfaceOut .15s ease forwards}
-    dialog.viewer.is-idle:not(.is-closing) .viewer-toolbar,dialog.viewer.is-idle:not(.is-closing) .gallery-nav{pointer-events:none;animation:archiveInterfaceOut .15s ease-out forwards}
     .slide-left{animation:slideLeft .24s ease}.slide-right{animation:slideRight .24s ease}
-    :host([data-theme="dark"]) dialog.viewer,:host-context(html[data-da-theme="dark"]) dialog.viewer{background:#000 url("${new URL('assets/starfield.svg', baseUrl).href}") 0 0/700px 700px repeat!important;color:#c1c8c6}
+    :host([data-theme="dark"]) dialog.viewer,:host-context(html[data-da-theme="dark"]) dialog.viewer{background:#000!important;color:#c1c8c6}
     :host([data-theme="dark"]) dialog.viewer::backdrop,:host-context(html[data-da-theme="dark"]) dialog.viewer::backdrop{background:#000!important}
+    :host([data-theme="dark"]) .viewer-starfield,:host-context(html[data-da-theme="dark"]) .viewer-starfield{display:block;background:#000 url("${new URL('assets/starfield.svg', baseUrl).href}") center/700px 700px repeat!important}
     :host([data-theme="dark"]) .viewer-toolbar,:host-context(html[data-da-theme="dark"]) .viewer-toolbar{background:rgba(0,0,0,.75)!important;border-color:#303736;color:#b7c2c0}
     :host([data-theme="dark"]) .close,:host([data-theme="dark"]) .gallery-nav,:host-context(html[data-da-theme="dark"]) .close,:host-context(html[data-da-theme="dark"]) .gallery-nav{color:#b7c2c0}
     :host([data-theme="dark"]) .gallery-nav,:host-context(html[data-da-theme="dark"]) .gallery-nav{background:transparent!important}
@@ -113,7 +114,7 @@
       .controls input,.controls select{width:100%;min-width:0;min-height:32px;padding:4px 1px;font-size:13px;line-height:1.2}
       .select-controls label{flex:1;min-width:0}
       h1{font-size:70px}.meta{grid-template-columns:minmax(0,50%) minmax(0,50%);gap:0;padding-top:20px}.meta dl{width:100%;max-width:none;min-width:0}.meta dl>div{display:grid;grid-template-columns:minmax(0,35%) minmax(0,1fr);align-items:start;gap:clamp(4px,1cqw,8px);padding:2px 0 7px}.meta dt{font-size:10px;line-height:1.35;padding-top:2px;white-space:nowrap;text-align:left}.meta dd{min-width:0;font-size:13px;line-height:1.35;text-align:right;overflow-wrap:anywhere}.meta h2{font-size:38px}.year{font-size:17px}
-      .gallery-nav{width:40px;height:40px}.previous{left:12px}.next{right:12px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:15px}
+      .viewer-frame{padding:47px 52px 0}.gallery-nav{width:40px;height:40px}.previous{left:8px}.next{right:8px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:15px}
     }
     @media(max-width:430px){.meta{grid-template-columns:minmax(0,50%) minmax(0,50%)}.meta dl>div{gap:4px}.meta dt{font-size:9px}.meta dd{font-size:12px}.meta dl>div:first-child{grid-template-columns:58px minmax(0,1fr)!important;column-gap:6px!important}.meta dl>div:first-child dd{white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important}}
     @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.archive-spinner,dialog.viewer::backdrop,dialog.viewer .viewer-frame,dialog.viewer .viewer-caption,dialog.viewer .viewer-toolbar,dialog.viewer .gallery-nav{animation:none!important}}
@@ -173,7 +174,6 @@
       this.galleryClosing = false;
       this.galleryMoving = false;
       this.galleryTitle = '';
-      this.viewerIdleTimer = 0;
       this.themeObserver = null;
     }
 
@@ -189,7 +189,6 @@
     disconnectedCallback() {
       this.galleryPreloadObserver?.disconnect();
       this.themeObserver?.disconnect();
-      window.clearTimeout(this.viewerIdleTimer);
     }
 
     renderShell() {
@@ -219,6 +218,7 @@
           <p class="empty load-error" hidden>Archive data could not be loaded.</p>
         </main>
         <dialog class="viewer">
+          <div class="viewer-starfield" aria-hidden="true"></div>
           <div class="viewer-toolbar"><span class="image-counter" aria-live="polite"></span><button aria-label="Close gallery" class="close" type="button"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="m19.5 4.5-15 15M4.5 4.5l15 15"></path></svg></button></div>
           <button aria-label="Previous image" class="gallery-nav previous" type="button"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15 3 6 12l9 9"></path></svg></button>
           <figure class="viewer-content"><div class="viewer-frame"><img alt=""></div><figcaption class="viewer-caption"><p></p></figcaption></figure>
@@ -470,11 +470,6 @@
       const viewer = this.shadowRoot.querySelector('.viewer');
       if (!viewer.open || this.galleryClosing) return;
       viewer.classList.remove('is-idle');
-      window.clearTimeout(this.viewerIdleTimer);
-      if (this.prefersReducedMotion()) return;
-      this.viewerIdleTimer = window.setTimeout(() => {
-        if (viewer.open && !this.galleryClosing) viewer.classList.add('is-idle');
-      }, 2500);
     }
 
     closeGallery() {
@@ -484,7 +479,6 @@
       this.galleryRequest++;
       this.galleryClosing = true;
       this.galleryMoving = false;
-      window.clearTimeout(this.viewerIdleTimer);
       viewer.classList.remove('is-idle');
       viewer.classList.add('is-closing');
       const finish = () => {
