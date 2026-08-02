@@ -88,17 +88,30 @@ function card(w,position){
 }
 function setupViewer(){
   const viewer=document.querySelector('#viewer'),vimg=viewer.querySelector('img'),vtitle=viewer.querySelector('.viewer-caption p'),counter=viewer.querySelector('.image-counter'),prev=viewer.querySelector('.previous'),next=viewer.querySelector('.next');
-  let gallery=[],galleryIndex=0,touchStartX=0,touchStartY=0;
+  let gallery=[],galleryIndex=0,touchStartX=0,touchStartY=0,closing=false;
   function renderImage(direction=0){if(!gallery.length)return;vimg.classList.remove('slide-left','slide-right');void vimg.offsetWidth;vimg.style.objectFit='contain';vimg.src=gallery[galleryIndex];vimg.alt=`${vtitle.textContent} by David Ambarzumjan, image ${galleryIndex+1} of ${gallery.length}`;vimg.title=`${vtitle.textContent} — David Ambarzumjan`;counter.textContent=`${galleryIndex+1} / ${gallery.length}`;prev.hidden=gallery.length<2;next.hidden=gallery.length<2;if(direction)vimg.classList.add(direction>0?'slide-left':'slide-right');}
-  function move(step){if(gallery.length<2)return;galleryIndex=(galleryIndex+step+gallery.length)%gallery.length;renderImage(step);}
-  document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>{if(window.self!==window.top)return;try{gallery=JSON.parse(b.dataset.images||'[]'); gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=b.dataset.title;renderImage();viewer.showModal();document.body.classList.add('viewer-open');}));
+  function move(step){if(closing||gallery.length<2)return;galleryIndex=(galleryIndex+step+gallery.length)%gallery.length;renderImage(step);}
+  function openViewer(button){if(window.self!==window.top)return;try{gallery=JSON.parse(button.dataset.images||'[]');gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=button.dataset.title;renderImage();closing=false;viewer.classList.remove('is-closing');if(!viewer.open)viewer.showModal();document.body.classList.add('viewer-open');}
+  document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>openViewer(b)));
   prev.addEventListener('click',e=>{e.stopPropagation();move(-1)});next.addEventListener('click',e=>{e.stopPropagation();move(1)});
-  function closeViewer(){if(viewer.open)viewer.close();document.body.classList.remove('viewer-open');vimg.src='';}
+  function closeViewer(){if(!viewer.open||closing)return;const finish=()=>{viewer.close();viewer.classList.remove('is-closing');document.body.classList.remove('viewer-open');vimg.removeAttribute('src');closing=false};closing=true;viewer.classList.add('is-closing');if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){finish();return}window.setTimeout(finish,220);}
   viewer.querySelector('.close').addEventListener('click',closeViewer);viewer.addEventListener('click',e=>{if(e.target===viewer)closeViewer()});
   viewer.addEventListener('cancel',e=>{e.preventDefault();closeViewer()});
   document.addEventListener('keydown',e=>{if(!viewer.open)return;if(e.key==='Escape')closeViewer();if(e.key==='ArrowLeft')move(-1);if(e.key==='ArrowRight')move(1)});
   viewer.addEventListener('touchstart',e=>{const t=e.changedTouches[0];touchStartX=t.clientX;touchStartY=t.clientY},{passive:true});
   viewer.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-touchStartX,dy=t.clientY-touchStartY;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.25)move(dx<0?1:-1)},{passive:true});
+}
+function setupTheme(){
+  const root=document.documentElement,toggle=document.querySelector('#theme-toggle');
+  const isDark=()=>root.getAttribute('data-da-theme')==='dark';
+  const reduceMotion=()=>window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function store(dark){try{window.localStorage.setItem('da-color-mode',dark?'dark':'light')}catch(error){}}
+  function syncButton(){const dark=isDark();toggle.setAttribute('aria-pressed',dark?'true':'false');toggle.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');toggle.title=dark?'Switch to light mode':'Switch to dark mode'}
+  function syncThemeColor(){let meta=document.querySelector('meta[name="theme-color"]');if(!meta){meta=document.createElement('meta');meta.name='theme-color';document.head.appendChild(meta)}meta.content=isDark()?'#000000':'#ffffff'}
+  function commit(dark,persist){if(dark)root.setAttribute('data-da-theme','dark');else root.removeAttribute('data-da-theme');if(persist)store(dark);syncButton();syncThemeColor()}
+  function setTheme(dark,persist,animate){if(!animate||reduceMotion()||!document.body){commit(dark,persist);return}const cover=document.createElement('div');cover.id='da-theme-transition-cover';cover.className=dark?'da-to-dark':'da-to-light';cover.setAttribute('aria-hidden','true');document.body.appendChild(cover);cover.offsetWidth;requestAnimationFrame(()=>{cover.classList.add('da-is-visible');window.setTimeout(()=>{commit(dark,persist);requestAnimationFrame(()=>{cover.classList.remove('da-is-visible');window.setTimeout(()=>cover.remove(),130)})},125)})}
+  try{commit(window.localStorage.getItem('da-color-mode')!=='light',false)}catch(error){commit(true,false)}
+  toggle.addEventListener('click',()=>setTheme(!isDark(),true,true));toggle.addEventListener('pointerup',event=>{if(event.pointerType)toggle.blur()});
 }
 function filter(){
 const q=search.value.trim().toLowerCase(),y=yearSelect.value;
@@ -126,5 +139,6 @@ async function init(){
     search.addEventListener('input',filter);yearSelect.addEventListener('change',filter);sortSelect.addEventListener('change',filter);document.querySelector('#reset').addEventListener('click',()=>{search.value='';yearSelect.value='all';sortSelect.value='latest';filter()});
   }catch(err){console.error(err);loadError.hidden=false;}
 }
+setupTheme();
 setupEmbedHeight();
 init();
