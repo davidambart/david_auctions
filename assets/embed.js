@@ -59,13 +59,12 @@
     dd{margin:0;font-size:11px;text-align:right}
     .charity-row dd{line-height:1.45}
     .empty{text-align:center;padding:80px 0;color:var(--muted)}
-    :host dialog.viewer{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:#111;overflow:hidden;touch-action:none}
+    :host dialog.viewer{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:#111;overflow:hidden;touch-action:pan-y}
     :host dialog.viewer::backdrop{background:rgba(255,255,255,.95)}
     .viewer-content{width:100%;height:100%;margin:0;display:grid;grid-template-rows:minmax(0,1fr) 62px}
     .viewer-frame{position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .viewer-frame.is-loading::after{content:"";position:absolute;width:34px;aspect-ratio:1;border:1.5px solid rgba(0,0,0,.12);border-top-color:#374151;border-radius:50%;animation:archiveSpin .78s linear infinite}
-    .viewer-frame img{display:block;width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none;position:relative;z-index:1;will-change:transform,opacity;transform:translate3d(var(--viewer-drag-x,0),var(--viewer-drag-y,0),0);opacity:var(--viewer-drag-opacity,1)}
-    .gallery-outgoing{display:block;position:absolute;inset:0;z-index:2;width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none}
+    .viewer-frame img{display:block;width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
     .viewer-frame.is-loading img{visibility:hidden}
     .viewer-caption{height:62px;display:grid;place-items:center;padding:0 24px;color:#111}
     .viewer-caption p{margin:0;font:400 22px "Cormorant Garamond",Georgia,serif;text-align:center}
@@ -85,15 +84,9 @@
     dialog.viewer[open]:not(.is-closing) .viewer-caption,dialog.viewer[open]:not(.is-closing) .viewer-toolbar,dialog.viewer[open]:not(.is-closing) .gallery-nav{animation:archiveInterfaceIn .25s ease .1s backwards}
     dialog.viewer.is-closing::backdrop{animation:archiveBackdropOut .35s ease forwards}
     dialog.viewer.is-closing .viewer-frame{animation:archiveContentOutDown .2s ease both}
-    dialog.viewer.is-closing-up .viewer-frame{animation-name:archiveContentOutUp}
     dialog.viewer.is-closing .viewer-caption,dialog.viewer.is-closing .viewer-toolbar,dialog.viewer.is-closing .gallery-nav{animation:archiveInterfaceOut .15s ease forwards}
     dialog.viewer.is-idle:not(.is-closing) .viewer-toolbar,dialog.viewer.is-idle:not(.is-closing) .gallery-nav{pointer-events:none;animation:archiveInterfaceOut .15s ease-out forwards}
-    .viewer-frame.is-dragging img{transition:none}
-    .viewer-frame.is-settling img{transition:transform .22s cubic-bezier(.22,.61,.36,1),opacity .22s ease}
-    .gallery-enter-next{animation:archiveGalleryEnterNext .3s cubic-bezier(.22,.61,.36,1) both!important}
-    .gallery-enter-previous{animation:archiveGalleryEnterPrevious .3s cubic-bezier(.22,.61,.36,1) both!important}
-    .gallery-outgoing-next{animation:archiveGalleryExitNext .24s cubic-bezier(.4,0,1,1) both}
-    .gallery-outgoing-previous{animation:archiveGalleryExitPrevious .24s cubic-bezier(.4,0,1,1) both}
+    .slide-left{animation:slideLeft .24s ease}.slide-right{animation:slideRight .24s ease}
     :host([data-theme="dark"]) dialog.viewer,:host-context(html[data-da-theme="dark"]) dialog.viewer{background:#000 url("${new URL('assets/starfield.svg', baseUrl).href}") 0 0/700px 700px repeat!important;color:#c1c8c6}
     :host([data-theme="dark"]) dialog.viewer::backdrop,:host-context(html[data-da-theme="dark"]) dialog.viewer::backdrop{background:#000!important}
     :host([data-theme="dark"]) .viewer-toolbar,:host-context(html[data-da-theme="dark"]) .viewer-toolbar{background:rgba(0,0,0,.75)!important;border-color:#303736;color:#b7c2c0}
@@ -105,13 +98,10 @@
     @keyframes archiveBackdropOut{to{opacity:0}}
     @keyframes archiveContentIn{from{opacity:0;transform:scale(.975) translate3d(0,16px,0)}to{opacity:1;transform:scale(1) translate3d(0,0,0)}}
     @keyframes archiveContentOutDown{to{opacity:0;transform:scale(.975) translate3d(0,16px,0)}}
-    @keyframes archiveContentOutUp{to{opacity:0;transform:scale(.975) translate3d(0,-16px,0)}}
     @keyframes archiveInterfaceIn{from{opacity:0}to{opacity:1}}
     @keyframes archiveInterfaceOut{to{opacity:0}}
-    @keyframes archiveGalleryEnterNext{from{opacity:0;transform:translate3d(14vw,0,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
-    @keyframes archiveGalleryEnterPrevious{from{opacity:0;transform:translate3d(-14vw,0,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
-    @keyframes archiveGalleryExitNext{to{opacity:0;transform:translate3d(-14vw,0,0) scale(.99)}}
-    @keyframes archiveGalleryExitPrevious{to{opacity:0;transform:translate3d(14vw,0,0) scale(.99)}}
+    @keyframes slideLeft{from{opacity:.35;transform:translateX(18px)}to{opacity:1;transform:none}}
+    @keyframes slideRight{from{opacity:.35;transform:translateX(-18px)}to{opacity:1;transform:none}}
     @media(max-width:1100px) and (min-width:761px){.archive{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:760px){
       .archive{grid-template-columns:1fr}
@@ -126,7 +116,7 @@
       .gallery-nav{width:40px;height:40px}.previous{left:12px}.next{right:12px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:15px}
     }
     @media(max-width:430px){.meta{grid-template-columns:minmax(0,50%) minmax(0,50%)}.meta dl>div{gap:4px}.meta dt{font-size:9px}.meta dd{font-size:12px}.meta dl>div:first-child{grid-template-columns:58px minmax(0,1fr)!important;column-gap:6px!important}.meta dl>div:first-child dd{white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important}}
-    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.gallery-outgoing,.archive-spinner,dialog.viewer::backdrop,dialog.viewer .viewer-frame,dialog.viewer .viewer-caption,dialog.viewer .viewer-toolbar,dialog.viewer .gallery-nav{animation:none!important}}
+    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.archive-spinner,dialog.viewer::backdrop,dialog.viewer .viewer-frame,dialog.viewer .viewer-caption,dialog.viewer .viewer-toolbar,dialog.viewer .gallery-nav{animation:none!important}}
   `;
 
   function parseCSV(text) {
@@ -173,6 +163,8 @@
       this.works = [];
       this.gallery = [];
       this.galleryIndex = 0;
+      this.touchStartX = 0;
+      this.touchStartY = 0;
       this.previousBodyOverflow = '';
       this.galleryImageCache = new Map();
       this.galleryPreloadObserver = null;
@@ -182,9 +174,6 @@
       this.galleryMoving = false;
       this.galleryTitle = '';
       this.viewerIdleTimer = 0;
-      this.viewerGesture = null;
-      this.viewerClickSuppressedUntil = 0;
-      this.viewerSettleTimer = 0;
       this.themeObserver = null;
     }
 
@@ -200,7 +189,6 @@
     disconnectedCallback() {
       this.galleryPreloadObserver?.disconnect();
       this.themeObserver?.disconnect();
-      window.clearTimeout(this.viewerSettleTimer);
       window.clearTimeout(this.viewerIdleTimer);
     }
 
@@ -270,17 +258,21 @@
       root.querySelector('.next').addEventListener('click', () => { this.revealViewerControls(); this.moveGallery(1); });
       const viewer = root.querySelector('.viewer');
       viewer.addEventListener('cancel', event => { event.preventDefault(); this.closeGallery(); });
-      viewer.addEventListener('click', event => {
-        if (Date.now() < this.viewerClickSuppressedUntil) return;
-        const isControl = event.target.closest('button');
-        const isImage = event.target.closest('.viewer-frame img');
-        if (!isControl && !isImage) this.closeGallery('down');
-      });
-      viewer.addEventListener('pointerdown', event => this.beginViewerGesture(event));
-      viewer.addEventListener('pointermove', event => this.updateViewerGesture(event), {passive: false});
-      viewer.addEventListener('pointerup', event => this.endViewerGesture(event));
-      viewer.addEventListener('pointercancel', event => this.cancelViewerGesture(event));
+      viewer.addEventListener('click', event => { if (event.target === viewer) this.closeGallery(); else this.revealViewerControls(); });
+      viewer.addEventListener('pointermove', () => this.revealViewerControls(), {passive: true});
       viewer.addEventListener('focusin', () => this.revealViewerControls());
+      viewer.addEventListener('touchstart', event => {
+        this.revealViewerControls();
+        const touch = event.changedTouches[0];
+        this.touchStartX = touch.clientX;
+        this.touchStartY = touch.clientY;
+      }, {passive: true});
+      viewer.addEventListener('touchend', event => {
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - this.touchStartX;
+        const dy = touch.clientY - this.touchStartY;
+        if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.25) this.moveGallery(dx < 0 ? 1 : -1);
+      }, {passive: true});
       this.addEventListener('keydown', event => {
         if (!viewer.open) return;
         this.revealViewerControls();
@@ -296,99 +288,6 @@
     observeTheme() {
       this.themeObserver = new MutationObserver(() => this.syncTheme());
       this.themeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['data-da-theme']});
-    }
-
-    beginViewerGesture(event) {
-      const viewer = this.shadowRoot.querySelector('.viewer');
-      if (!viewer.open || this.galleryClosing || (event.pointerType === 'mouse' && event.button !== 0)) return;
-      const isControl = Boolean(event.target.closest('button'));
-      this.viewerGesture = {
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        startedAt: Date.now(),
-        axis: '',
-        moved: false,
-        isControl
-      };
-      if (!isControl) viewer.setPointerCapture?.(event.pointerId);
-    }
-
-    updateViewerGesture(event) {
-      const gesture = this.viewerGesture;
-      if (!gesture || gesture.pointerId !== event.pointerId || gesture.isControl || this.galleryClosing) return;
-      const dx = event.clientX - gesture.startX;
-      const dy = event.clientY - gesture.startY;
-      if (!gesture.axis && Math.max(Math.abs(dx), Math.abs(dy)) < 6) return;
-      gesture.moved = true;
-      gesture.axis ||= Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
-      const frame = this.shadowRoot.querySelector('.viewer-frame');
-      const bounds = frame.getBoundingClientRect();
-      if (gesture.axis === 'x') {
-        if (this.gallery.length < 2) return;
-        const dragX = Math.max(-bounds.width * .42, Math.min(bounds.width * .42, dx));
-        this.setViewerDrag(dragX, 0, 1 - Math.min(.28, Math.abs(dragX) / bounds.width * .3));
-      } else {
-        const dragY = Math.max(-bounds.height * .42, Math.min(bounds.height * .42, dy));
-        this.setViewerDrag(0, dragY, 1 - Math.min(.3, Math.abs(dragY) / bounds.height * .34));
-      }
-      event.preventDefault();
-    }
-
-    endViewerGesture(event) {
-      const gesture = this.viewerGesture;
-      if (!gesture || gesture.pointerId !== event.pointerId) return;
-      const viewer = this.shadowRoot.querySelector('.viewer');
-      viewer.releasePointerCapture?.(event.pointerId);
-      this.viewerGesture = null;
-      if (gesture.isControl || !gesture.moved) return;
-      const frame = this.shadowRoot.querySelector('.viewer-frame');
-      const bounds = frame.getBoundingClientRect();
-      const dx = event.clientX - gesture.startX;
-      const dy = event.clientY - gesture.startY;
-      const elapsed = Math.max(1, Date.now() - gesture.startedAt);
-      const quickHorizontal = Math.abs(dx) / elapsed > .55;
-      const quickVertical = Math.abs(dy) / elapsed > .65;
-      this.viewerClickSuppressedUntil = Date.now() + 380;
-      if (gesture.axis === 'x' && this.gallery.length > 1 && (Math.abs(dx) > Math.max(62, bounds.width * .15) || quickHorizontal)) {
-        this.clearViewerDrag();
-        this.moveGallery(dx < 0 ? 1 : -1);
-      } else if (gesture.axis === 'y' && (Math.abs(dy) > Math.max(78, bounds.height * .13) || quickVertical)) {
-        this.clearViewerDrag();
-        this.closeGallery(dy < 0 ? 'up' : 'down');
-      } else {
-        this.clearViewerDrag(true);
-      }
-    }
-
-    cancelViewerGesture(event) {
-      if (!this.viewerGesture || this.viewerGesture.pointerId !== event.pointerId) return;
-      this.viewerGesture = null;
-      this.clearViewerDrag(true);
-    }
-
-    setViewerDrag(x, y, opacity) {
-      const frame = this.shadowRoot.querySelector('.viewer-frame');
-      const image = frame.querySelector('img');
-      frame.classList.remove('is-settling');
-      frame.classList.add('is-dragging');
-      image.style.setProperty('--viewer-drag-x', `${x}px`);
-      image.style.setProperty('--viewer-drag-y', `${y}px`);
-      image.style.setProperty('--viewer-drag-opacity', String(opacity));
-    }
-
-    clearViewerDrag(animate = false) {
-      const frame = this.shadowRoot.querySelector('.viewer-frame');
-      const image = frame.querySelector('img');
-      frame.classList.remove('is-dragging');
-      if (animate) {
-        frame.classList.add('is-settling');
-        window.clearTimeout(this.viewerSettleTimer);
-        this.viewerSettleTimer = window.setTimeout(() => frame.classList.remove('is-settling'), 240);
-      }
-      image.style.removeProperty('--viewer-drag-x');
-      image.style.removeProperty('--viewer-drag-y');
-      image.style.removeProperty('--viewer-drag-opacity');
     }
 
     setLoaded() {
@@ -522,7 +421,7 @@
       const viewer = this.shadowRoot.querySelector('.viewer');
       this.galleryClosing = false;
       this.galleryMoving = false;
-      viewer.classList.remove('is-closing', 'is-closing-up', 'is-idle');
+      viewer.classList.remove('is-closing', 'is-idle');
       viewer.showModal();
       this.revealViewerControls();
     }
@@ -537,7 +436,7 @@
       root.querySelector('.image-counter').textContent = `${index + 1} / ${this.gallery.length}`;
       root.querySelector('.previous').hidden = this.gallery.length < 2;
       root.querySelector('.next').hidden = this.gallery.length < 2;
-      image.classList.remove('gallery-enter-next', 'gallery-enter-previous');
+      image.classList.remove('slide-left', 'slide-right');
       const currentSource = image.currentSrc || image.getAttribute('src');
       if (!currentSource) frame.classList.add('is-loading');
       const loaded = await this.preloadGalleryImage(source);
@@ -546,20 +445,12 @@
         frame.classList.remove('is-loading');
         return;
       }
-      if (direction && currentSource && currentSource !== source) {
-        const outgoing = image.cloneNode(true);
-        outgoing.className = `gallery-outgoing gallery-outgoing-${direction > 0 ? 'next' : 'previous'}`;
-        outgoing.alt = '';
-        frame.appendChild(outgoing);
-        outgoing.addEventListener('animationend', () => outgoing.remove(), {once: true});
-      }
       image.src = source;
       image.alt = `${this.galleryTitle} by David Ambarzumjan, image ${index + 1} of ${this.gallery.length}`;
       image.hidden = false;
       frame.classList.remove('is-loading');
-      this.clearViewerDrag();
       void image.offsetWidth;
-      if (direction && currentSource !== source) image.classList.add(direction > 0 ? 'gallery-enter-next' : 'gallery-enter-previous');
+      if (direction && currentSource !== source) image.classList.add(direction > 0 ? 'slide-left' : 'slide-right');
     }
 
     moveGallery(step) {
@@ -586,26 +477,21 @@
       }, 2500);
     }
 
-    closeGallery(direction = 'down') {
+    closeGallery() {
       const viewer = this.shadowRoot.querySelector('.viewer');
       if (!viewer.open || this.galleryClosing) return;
       this.galleryOpenRequest++;
       this.galleryRequest++;
       this.galleryClosing = true;
       this.galleryMoving = false;
-      this.viewerGesture = null;
-      window.clearTimeout(this.viewerSettleTimer);
       window.clearTimeout(this.viewerIdleTimer);
-      this.clearViewerDrag();
-      viewer.classList.remove('is-idle', 'is-closing-up');
+      viewer.classList.remove('is-idle');
       viewer.classList.add('is-closing');
-      if (direction === 'up') viewer.classList.add('is-closing-up');
       const finish = () => {
         viewer.close();
-        viewer.classList.remove('is-closing', 'is-closing-up');
+        viewer.classList.remove('is-closing');
         const frame = this.shadowRoot.querySelector('.viewer-frame');
         frame.classList.remove('is-loading');
-        frame.querySelectorAll('.gallery-outgoing').forEach(outgoing => outgoing.remove());
         const image = frame.querySelector('img');
         image.hidden = true;
         image.removeAttribute('src');
