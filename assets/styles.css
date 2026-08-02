@@ -80,3 +80,9 @@ html[data-da-theme="dark"]{--ink:#aeb5b3;--muted:#818987;--line:#303736;--paper:
     line-height:1.2;
   }
 }
+
+/* Keep the archive content close to the heading, while the theme control aligns with the page edge. */
+.intro{padding-bottom:0}
+.count-row{width:calc(100vw - var(--pad) - var(--pad))}
+.controls{margin-bottom:28px}
+@media(max-width:760px){.controls{margin-bottom:24px}}
