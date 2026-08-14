@@ -270,7 +270,7 @@
         this.works = parseCSV(await response.text()).map(work => ({
           ...work,
           resultEUR: resultInEuro(work),
-          images: (work.images || work.image).split('|').map(path => path.trim()).filter(Boolean).map(path => new URL(path, baseUrl).href)
+          images: work.images.split('|').map(path => path.trim()).filter(Boolean).map(path => new URL(path, baseUrl).href)
         }));
         const years = [...new Set(this.works.map(work => String(work.year)))].sort((a, b) => Number(b) - Number(a));
         const yearSelect = this.shadowRoot.querySelector('.year-select');
@@ -313,7 +313,7 @@
       const index = this.works.indexOf(work);
       const charity = work.charity ? `<div class="charity-row"><dt>Charity</dt><dd>${escapeHTML(work.charity)}</dd></div>` : '';
       const imageTitle = `${work.title}, ${work.year} — David Ambarzumjan`;
-      const image = new URL(work.image, baseUrl).href;
+      const image = work.images[0];
       const priority = position < 3;
       return `<article class="artwork">
         <button class="image-button" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
