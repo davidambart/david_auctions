@@ -51,13 +51,15 @@
     .archive{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(65px,8cqw,125px) clamp(24px,4cqw,64px)}
     .artwork{min-width:0;content-visibility:auto;contain-intrinsic-size:620px}
     .image-button{position:relative;display:block;width:100%;padding:0;border:0;background:#f4f4f2;cursor:zoom-in;aspect-ratio:1/1;overflow:hidden}
-    :host(.da-theme-dark) .image-button.is-loading>.star-loader.is-ready{position:absolute;z-index:1;top:50%;left:50%;display:block;width:clamp(84px,24%,126px);aspect-ratio:1;transform:translate(-50%,-50%)}
+    :host(.da-theme-dark) .image-button>.card-loader.is-ready{position:absolute;z-index:1;top:50%;left:50%;display:none;width:clamp(92px,27%,138px);aspect-ratio:1;transform:translate(-50%,-50%);transition:opacity .52s cubic-bezier(.22,1,.36,1)}
+    :host(.da-theme-dark) .image-button.is-loading>.card-loader.is-ready{display:block;opacity:1}
+    :host(.da-theme-dark) .image-button.is-loader-exiting>.card-loader.is-ready{display:block;opacity:0}
     :host(.da-theme-dark) .image-button.is-loading>img{opacity:0}
-    .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .6s ease}
+    .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .52s cubic-bezier(.22,1,.36,1),transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
     .meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
     .artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:0;transform:translateY(14px)}
-    .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkReveal .72s cubic-bezier(.22,1,.36,1) var(--card-reveal-delay,0ms) both}
+    .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkReveal .72s cubic-bezier(.22,1,.36,1) both}
     @keyframes artworkReveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
     .meta>div,.meta dl{min-width:0}
     .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0;overflow-wrap:anywhere}
@@ -111,7 +113,7 @@
       .meta dt{font-size:8px;line-height:1.35;padding-top:0;white-space:normal;text-align:left}
       .meta dd{min-width:0;font-size:11px;line-height:1.35;text-align:right;overflow-wrap:anywhere}
     }
-    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.archive-spinner,.artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:none!important}.artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:1;transform:none}}
+    @media(prefers-reduced-motion:reduce){.image-button img,.image-button>.card-loader{transition:none}.viewer-frame img,.archive-spinner,.artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:none!important}.artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:1;transform:none}}
   `;
 
   function parseCSV(text) {
@@ -232,17 +234,18 @@
     }
 
     makeStars(count) {
+      const tones = ['232,220,198', '203,227,230', '237,242,238'];
       return Array.from({length: count}, (_, index) => {
         const seed = (index * 0.61803398875) % 1;
         return {
-          angle: (index / count) * Math.PI * 2,
-          band: seed * Math.PI * 2,
-          drift: 0.77 + ((index * 17) % 19) / 42,
-          glow: 0.46 + ((index * 11) % 23) / 38,
-          lane: (((index * 7) % 13) - 6) / 6,
-          size: 0.38 + ((index * 29) % 31) / 28,
-          sparkle: (index * 1.91) % (Math.PI * 2),
-          tone: index % 11 === 0 ? 'warm' : index % 7 === 0 ? 'cool' : 'white'
+          angle: index * 2.3999632297,
+          band: .18 + ((index * 37) % 100) / 100 * .78,
+          drift: seed * Math.PI * 2,
+          glow: .5 + ((index * 19) % 100) / 100 * .5,
+          lane: ((index * 29) % 100) / 100 - .5,
+          size: .48 + ((index * 43) % 100) / 100 * 1.18,
+          sparkle: ((index * 71) % 100) / 100,
+          tone: tones[index % tones.length]
         };
       });
     }
@@ -311,38 +314,37 @@
       const centerX = width / 2;
       const centerY = height / 2;
       const scale = Math.min(width, height);
-      const orbitRadius = scale * 0.31;
+      const outerRadius = scale * .43;
+      const ringDepth = outerRadius * .4;
+      context.save();
+      context.globalCompositeOperation = 'lighter';
       stars.forEach(star => {
-        const flockWave = Math.sin(time * 1.12 + star.band) * 0.22;
-        const ripple = Math.sin(time * 1.94 + star.band * 2.7) * 0.09;
-        const angle = star.angle + time * (0.96 + flockWave * 0.42) * star.drift;
-        const radialBreath = Math.sin(time * 1.28 + star.band * 1.6) * scale * 0.038;
-        const bandWidth = scale * (0.08 + Math.sin(time * 0.72 + star.band * 2.1) * 0.028);
-        const freeLane = star.lane * bandWidth + radialBreath;
-        const lane = freeLane < 0 ? freeLane * 0.52 : freeLane * 0.9;
-        const rawWobble = Math.sin(angle * 3 + time * 1.38 + star.band) * scale * 0.023;
+        const flockWave = Math.sin(time * 1.15 + star.drift) * .055;
+        const ripple = Math.sin(time * 1.65 + star.angle * 2.15 + star.drift) * .028;
+        const angle = star.angle + time * (.6 + star.band * .12) + Math.sin(time * .78 + star.drift) * .085;
+        const radialBreath = Math.sin(time * 1.28 + star.drift) * outerRadius * .025;
+        const bandWidth = ringDepth * (.32 + star.band * .31);
+        const freeLane = star.lane + flockWave + ripple;
+        const lane = freeLane < 0 ? freeLane * .52 : freeLane * .9;
+        const rawWobble = Math.sin(time * 1.47 + star.drift) * ringDepth * .09;
         const wobble = star.lane < 0 ? rawWobble * 0.34 : rawWobble;
-        const x = centerX + Math.cos(angle + ripple) * (orbitRadius + lane + wobble);
-        const y = centerY + Math.sin(angle + ripple) * (orbitRadius * 0.82 + lane * 0.82 + wobble * 0.46);
-        const pulse = 0.72 + Math.sin(time * 2.2 + star.sparkle) * 0.24;
-        const head = 0.42 + 0.58 * Math.max(0, Math.sin(angle - time * 0.85));
-        const opacity = star.glow * pulse * (0.62 + head * 0.44);
-        this.drawStar(context, x, y, Math.max(0.35, star.size * scale * 0.008 * (0.72 + head * 0.5)), opacity, star.tone);
+        const radius = outerRadius - bandWidth * .17 + lane * bandWidth + radialBreath + wobble;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        const twinkle = .7 + Math.sin(time * 2.8 + star.sparkle * Math.PI * 2) * .3;
+        const opacity = (.42 + star.glow * .45) * twinkle;
+        const pointSize = star.size * (.72 + twinkle * .28);
+        this.drawStar(context, x, y, pointSize, opacity, star.tone);
+        if (star.size > 1.2) this.drawStar(context, x, y, pointSize * 2.2, opacity * .07, star.tone);
       });
+      context.restore();
     }
 
     drawStar(context, x, y, radius, opacity, tone) {
-      const color = tone === 'warm' ? '232,220,198' : tone === 'cool' ? '203,227,230' : '237,242,238';
       context.beginPath();
-      context.fillStyle = `rgba(${color},${opacity})`;
+      context.fillStyle = `rgba(${tone},${opacity})`;
       context.arc(x, y, radius, 0, Math.PI * 2);
       context.fill();
-      if (radius > 0.78) {
-        context.beginPath();
-        context.fillStyle = `rgba(${color},${opacity * 0.19})`;
-        context.arc(x, y, radius * 3.2, 0, Math.PI * 2);
-        context.fill();
-      }
     }
   }
 
@@ -533,11 +535,11 @@
       const charity = work.charity ? `<div class="charity-row"><dt>Charity</dt><dd>${escapeHTML(work.charity)}</dd></div>` : '';
       const imageTitle = `${work.title}, ${work.year} — David Ambarzumjan`;
       const image = work.images[0];
-      const priority = position < 3;
+      const priority = position < 9;
       return `<article class="artwork is-reveal-pending" data-reveal-position="${position}">
         <button class="image-button is-loading" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
           <canvas class="star-loader card-loader" aria-hidden="true"></canvas>
-          <img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${priority ? 'high' : 'low'}" decoding="async">
+          <img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${position < 3 ? 'high' : 'auto'}" decoding="async">
         </button>
         <div class="meta">
           <div><h2>${escapeHTML(work.title)}</h2><p class="year">${escapeHTML(work.year)}</p></div>
@@ -560,9 +562,7 @@
         const reveal = () => {
           if (finished) return;
           finished = true;
-          button.classList.remove('is-loading');
-          this.starLoader.remove(loader);
-          this.queueCardReveal(button.closest('.artwork'), revealRun);
+          this.queueCardReveal(button.closest('.artwork'), button, loader, revealRun);
         };
         const finish = () => {
           if (finished) return;
@@ -574,23 +574,28 @@
         };
         image.addEventListener('load', finish, {once: true});
         image.addEventListener('error', finish, {once: true});
-        if (!this.starLoader.add(loader, 64)) button.classList.remove('is-loading');
+        this.starLoader.add(loader, 148);
         if (image.complete) finish();
       });
     }
 
-    queueCardReveal(card, revealRun) {
+    queueCardReveal(card, button, loader, revealRun) {
       if (!card || revealRun !== this.cardRevealRun) return;
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const now = performance.now();
       const revealAt = reduceMotion ? now : Math.max(now + 28, this.nextCardRevealAt);
       this.nextCardRevealAt = reduceMotion ? now : revealAt + 95;
-      card.style.setProperty('--card-reveal-delay', `${Math.round(revealAt - now)}ms`);
-      requestAnimationFrame(() => {
+      window.setTimeout(() => {
         if (revealRun !== this.cardRevealRun || !card.isConnected) return;
+        button.classList.remove('is-loading');
+        button.classList.add('is-loader-exiting');
         card.classList.remove('is-reveal-pending');
         card.classList.add('is-revealed');
-      });
+        window.setTimeout(() => {
+          this.starLoader.remove(loader);
+          button.classList.remove('is-loader-exiting');
+        }, reduceMotion ? 0 : 520);
+      }, Math.max(0, Math.round(revealAt - now)));
     }
 
     preloadGalleryImage(url) {
