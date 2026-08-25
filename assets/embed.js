@@ -31,6 +31,9 @@
     .shell{padding:0 0 90px}
     .archive-loading{min-height:clamp(150px,18cqw,250px);display:grid;place-items:center}
     .archive-spinner{width:34px;aspect-ratio:1;border:1.5px solid rgba(94,153,149,.28);border-top-color:#19575c;border-radius:50%;animation:archiveSpin .78s linear infinite}
+    .star-loader{display:none;pointer-events:none}
+    :host(.da-theme-dark) .archive-loading>.star-loader.is-ready{display:block;width:clamp(104px,14cqw,156px);aspect-ratio:1}
+    :host(.da-theme-dark) .archive-loading>.star-loader.is-ready+.archive-spinner{display:none}
     .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     @keyframes archiveSpin{to{transform:rotate(360deg)}}
     .intro{display:block;padding:0;max-width:none}
@@ -47,7 +50,9 @@
     .reset{margin-left:auto;background:transparent;border:0;color:var(--ink);text-transform:uppercase;letter-spacing:.12em;font-size:11px;cursor:pointer;padding:10px}
     .archive{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(65px,8cqw,125px) clamp(24px,4cqw,64px)}
     .artwork{min-width:0;content-visibility:auto;contain-intrinsic-size:620px}
-    .image-button{display:block;width:100%;padding:0;border:0;background:#f4f4f2;cursor:zoom-in;aspect-ratio:1/1;overflow:hidden}
+    .image-button{position:relative;display:block;width:100%;padding:0;border:0;background:#f4f4f2;cursor:zoom-in;aspect-ratio:1/1;overflow:hidden}
+    :host(.da-theme-dark) .image-button.is-loading>.star-loader.is-ready{position:absolute;z-index:1;top:50%;left:50%;display:block;width:clamp(62px,18%,94px);aspect-ratio:1;transform:translate(-50%,-50%)}
+    :host(.da-theme-dark) .image-button.is-loading>img{opacity:0}
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
     .meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
@@ -65,6 +70,8 @@
     .viewer-content{width:100%;height:100%;margin:0;display:grid;grid-template-rows:minmax(0,1fr) 62px}
     .viewer-frame{position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .viewer-frame.is-loading::after{content:"";position:absolute;width:34px;aspect-ratio:1;border:1.5px solid rgba(255,255,255,.28);border-top-color:#fff;border-radius:50%;animation:archiveSpin .78s linear infinite}
+    :host(.da-theme-dark) .viewer-frame.has-star-loader.is-loading::after{display:none}
+    :host(.da-theme-dark) .viewer-frame.is-loading>.star-loader.is-ready{position:absolute;z-index:1;top:50%;left:50%;display:block;width:clamp(118px,19vw,220px);aspect-ratio:1;transform:translate(-50%,-50%)}
     .viewer-frame img{display:block;width:100%;height:100%;max-width:100vw;max-height:calc(100vh - 62px);max-height:calc(100dvh - 62px);object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
     .viewer-frame.is-loading img{visibility:hidden}
     .viewer-caption{height:62px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 24px}
@@ -141,6 +148,194 @@
     return rate ? Math.round(amount / rate * 100) / 100 : amount;
   }
 
+  class StarMurmurationLoader {
+    constructor(host) {
+      this.host = host;
+      this.entries = new Map();
+      this.frame = 0;
+      this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.visibilityObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          const state = this.entries.get(entry.target);
+          if (state) state.visible = entry.isIntersecting;
+        });
+        this.schedule();
+      }, {rootMargin: '120px'}) : null;
+      this.resizeObserver = 'ResizeObserver' in window ? new ResizeObserver(entries => {
+        entries.forEach(entry => this.resize(this.entries.get(entry.target)));
+        this.drawStatic();
+      }) : null;
+      this.onThemeChange = () => this.schedule();
+      this.onMotionChange = () => this.schedule();
+      this.onPageVisibilityChange = () => this.schedule();
+      this.themeObserver = new MutationObserver(this.onThemeChange);
+      this.themeObserver.observe(host, {attributes: true, attributeFilter: ['class']});
+      this.reducedMotion.addEventListener?.('change', this.onMotionChange);
+      document.addEventListener('visibilitychange', this.onPageVisibilityChange);
+    }
+
+    add(canvas, count) {
+      if (!canvas || typeof canvas.getContext !== 'function') return false;
+      let state = this.entries.get(canvas);
+      if (!state) {
+        const context = canvas.getContext('2d', {alpha: true});
+        if (!context) return false;
+        state = {
+          canvas,
+          context,
+          count,
+          stars: this.makeStars(count),
+          visible: this.visibilityObserver ? false : true,
+          width: 0,
+          height: 0,
+          pixelRatio: 1
+        };
+        this.entries.set(canvas, state);
+        this.visibilityObserver?.observe(canvas);
+        this.resizeObserver?.observe(canvas);
+        this.resize(state);
+      }
+      canvas.classList.add('is-ready');
+      this.schedule();
+      return true;
+    }
+
+    remove(canvas) {
+      const state = this.entries.get(canvas);
+      if (!state) return;
+      this.visibilityObserver?.unobserve(canvas);
+      this.resizeObserver?.unobserve(canvas);
+      this.entries.delete(canvas);
+      canvas.classList.remove('is-ready');
+      this.schedule();
+    }
+
+    removeWithin(container) {
+      this.entries.forEach((state, canvas) => {
+        if (container.contains(canvas)) this.remove(canvas);
+      });
+    }
+
+    destroy() {
+      cancelAnimationFrame(this.frame);
+      this.entries.forEach((state, canvas) => this.remove(canvas));
+      this.visibilityObserver?.disconnect();
+      this.resizeObserver?.disconnect();
+      this.themeObserver.disconnect();
+      this.reducedMotion.removeEventListener?.('change', this.onMotionChange);
+      document.removeEventListener('visibilitychange', this.onPageVisibilityChange);
+    }
+
+    makeStars(count) {
+      return Array.from({length: count}, (_, index) => {
+        const seed = (index * 0.61803398875) % 1;
+        return {
+          angle: (index / count) * Math.PI * 2,
+          band: seed * Math.PI * 2,
+          drift: 0.77 + ((index * 17) % 19) / 42,
+          glow: 0.46 + ((index * 11) % 23) / 38,
+          lane: (((index * 7) % 13) - 6) / 6,
+          size: 0.38 + ((index * 29) % 31) / 28,
+          sparkle: (index * 1.91) % (Math.PI * 2),
+          tone: index % 11 === 0 ? 'warm' : index % 7 === 0 ? 'cool' : 'white'
+        };
+      });
+    }
+
+    resize(state) {
+      if (!state) return;
+      const rect = state.canvas.getBoundingClientRect();
+      const width = Math.round(rect.width);
+      const height = Math.round(rect.height);
+      if (!width || !height) return;
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      if (state.width === width && state.height === height && state.pixelRatio === pixelRatio) return;
+      state.width = width;
+      state.height = height;
+      state.pixelRatio = pixelRatio;
+      state.canvas.width = width * pixelRatio;
+      state.canvas.height = height * pixelRatio;
+      state.context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    }
+
+    isDark() {
+      return this.host.classList.contains('da-theme-dark');
+    }
+
+    hasVisibleEntries() {
+      return [...this.entries.values()].some(state => state.visible && state.canvas.isConnected);
+    }
+
+    schedule() {
+      cancelAnimationFrame(this.frame);
+      this.frame = 0;
+      if (!this.isDark() || document.hidden || !this.hasVisibleEntries()) return;
+      if (this.reducedMotion.matches) {
+        this.drawStatic();
+        return;
+      }
+      this.frame = requestAnimationFrame(time => this.render(time));
+    }
+
+    drawStatic() {
+      if (!this.isDark()) return;
+      this.entries.forEach(state => {
+        if (state.visible) this.draw(state, 0);
+      });
+    }
+
+    render(time) {
+      this.frame = 0;
+      if (!this.isDark() || document.hidden) return;
+      this.entries.forEach(state => {
+        if (state.visible && state.canvas.isConnected) this.draw(state, time * 0.001);
+      });
+      this.schedule();
+    }
+
+    draw(state, time) {
+      this.resize(state);
+      if (!state.width || !state.height) return;
+      const {context, width, height, stars} = state;
+      context.clearRect(0, 0, width, height);
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const scale = Math.min(width, height);
+      const orbitRadius = scale * 0.31;
+      stars.forEach(star => {
+        const flockWave = Math.sin(time * 1.12 + star.band) * 0.22;
+        const ripple = Math.sin(time * 1.94 + star.band * 2.7) * 0.09;
+        const angle = star.angle + time * (0.96 + flockWave * 0.42) * star.drift;
+        const radialBreath = Math.sin(time * 1.28 + star.band * 1.6) * scale * 0.038;
+        const bandWidth = scale * (0.08 + Math.sin(time * 0.72 + star.band * 2.1) * 0.028);
+        const freeLane = star.lane * bandWidth + radialBreath;
+        const lane = freeLane < 0 ? freeLane * 0.52 : freeLane * 0.9;
+        const rawWobble = Math.sin(angle * 3 + time * 1.38 + star.band) * scale * 0.023;
+        const wobble = star.lane < 0 ? rawWobble * 0.34 : rawWobble;
+        const x = centerX + Math.cos(angle + ripple) * (orbitRadius + lane + wobble);
+        const y = centerY + Math.sin(angle + ripple) * (orbitRadius * 0.82 + lane * 0.82 + wobble * 0.46);
+        const pulse = 0.72 + Math.sin(time * 2.2 + star.sparkle) * 0.24;
+        const head = 0.42 + 0.58 * Math.max(0, Math.sin(angle - time * 0.85));
+        const opacity = star.glow * pulse * (0.62 + head * 0.44);
+        this.drawStar(context, x, y, Math.max(0.35, star.size * scale * 0.008 * (0.72 + head * 0.5)), opacity, star.tone);
+      });
+    }
+
+    drawStar(context, x, y, radius, opacity, tone) {
+      const color = tone === 'warm' ? '232,220,198' : tone === 'cool' ? '203,227,230' : '237,242,238';
+      context.beginPath();
+      context.fillStyle = `rgba(${color},${opacity})`;
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fill();
+      if (radius > 0.78) {
+        context.beginPath();
+        context.fillStyle = `rgba(${color},${opacity * 0.19})`;
+        context.arc(x, y, radius * 3.2, 0, Math.PI * 2);
+        context.fill();
+      }
+    }
+  }
+
   class AuctionArchive extends HTMLElement {
     constructor() {
       super();
@@ -155,17 +350,21 @@
       this.galleryPreloadObserver = null;
       this.galleryOpenRequest = 0;
       this.galleryRequest = 0;
+      this.starLoader = null;
     }
 
     connectedCallback() {
       if (this.shadowRoot.children.length) return;
       this.renderShell();
+      this.starLoader = new StarMurmurationLoader(this);
+      this.starLoader.add(this.shadowRoot.querySelector('.archive-loader'), 148);
       this.bindEvents();
       this.load();
     }
 
     disconnectedCallback() {
       this.galleryPreloadObserver?.disconnect();
+      this.starLoader?.destroy();
     }
 
     renderShell() {
@@ -179,6 +378,7 @@
             <p class="count" aria-live="polite"></p>
           </header>
           <div class="archive-loading" role="status" aria-live="polite">
+            <canvas class="star-loader archive-loader" aria-hidden="true"></canvas>
             <span class="archive-spinner" aria-hidden="true"></span>
             <span class="visually-hidden">Loading auction archive</span>
           </div>
@@ -198,7 +398,7 @@
           <button aria-label="Close gallery" class="close" type="button">×</button>
           <button aria-label="Previous image" class="gallery-nav previous" type="button">‹</button>
           <figure class="viewer-content">
-            <div class="viewer-frame"><img alt=""></div>
+            <div class="viewer-frame"><canvas class="star-loader gallery-loader" aria-hidden="true"></canvas><img alt=""></div>
             <figcaption class="viewer-caption"><p></p><span class="image-counter"></span></figcaption>
           </figure>
           <button aria-label="Next image" class="gallery-nav next" type="button">›</button>
@@ -259,6 +459,7 @@
     setLoaded() {
       const root = this.shadowRoot;
       root.querySelector('.archive-loading').hidden = true;
+      this.starLoader.remove(root.querySelector('.archive-loader'));
       root.querySelector('.controls').hidden = false;
       root.querySelector('.archive').hidden = false;
       root.querySelector('.shell').setAttribute('aria-busy', 'false');
@@ -284,6 +485,7 @@
         console.error('Auction archive could not load:', error);
         const root = this.shadowRoot;
         root.querySelector('.archive-loading').hidden = true;
+        this.starLoader.remove(root.querySelector('.archive-loader'));
         root.querySelector('.shell').setAttribute('aria-busy', 'false');
         root.querySelector('.load-error').hidden = false;
       }
@@ -305,8 +507,11 @@
         return matchesQuery && (year === 'all' || String(work.year) === year);
       }).sort(compare);
       this.galleryPreloadObserver?.disconnect();
-      root.querySelector('.archive').innerHTML = visible.map((work, position) => this.cardHTML(work, position)).join('');
+      const archive = root.querySelector('.archive');
+      this.starLoader.removeWithin(archive);
+      archive.innerHTML = visible.map((work, position) => this.cardHTML(work, position)).join('');
       root.querySelector('.no-results').hidden = visible.length !== 0;
+      this.bindCardLoaders();
       this.preloadVisibleGalleries();
     }
 
@@ -317,7 +522,8 @@
       const image = work.images[0];
       const priority = position < 3;
       return `<article class="artwork">
-        <button class="image-button" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
+        <button class="image-button is-loading" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
+          <canvas class="star-loader card-loader" aria-hidden="true"></canvas>
           <img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${priority ? 'high' : 'low'}" decoding="async">
         </button>
         <div class="meta">
@@ -330,6 +536,21 @@
           </dl>
         </div>
       </article>`;
+    }
+
+    bindCardLoaders() {
+      this.shadowRoot.querySelectorAll('.image-button.is-loading').forEach(button => {
+        const image = button.querySelector('img');
+        const loader = button.querySelector('.card-loader');
+        const finish = () => {
+          button.classList.remove('is-loading');
+          this.starLoader.remove(loader);
+        };
+        image.addEventListener('load', finish, {once: true});
+        image.addEventListener('error', finish, {once: true});
+        if (!this.starLoader.add(loader, 64)) button.classList.remove('is-loading');
+        if (image.complete) finish();
+      });
     }
 
     preloadGalleryImage(url) {
@@ -398,18 +619,21 @@
       root.querySelector('.next').hidden = this.gallery.length < 2;
       image.classList.remove('slide-left', 'slide-right');
       frame.classList.add('is-loading');
+      frame.classList.toggle('has-star-loader', this.starLoader.add(frame.querySelector('.gallery-loader'), 148));
       image.hidden = true;
       image.removeAttribute('src');
       const loaded = await this.preloadGalleryImage(source);
       if (request !== this.galleryRequest) return;
       if (!loaded) {
         frame.classList.remove('is-loading');
+        this.starLoader.remove(frame.querySelector('.gallery-loader'));
         return;
       }
       image.src = source;
       image.alt = `${title} by David Ambarzumjan, image ${index + 1} of ${this.gallery.length}`;
       image.hidden = false;
       frame.classList.remove('is-loading');
+      this.starLoader.remove(frame.querySelector('.gallery-loader'));
       void image.offsetWidth;
       if (direction) image.classList.add(direction > 0 ? 'slide-left' : 'slide-right');
     }
@@ -427,6 +651,7 @@
       if (viewer.open) viewer.close();
       const frame = this.shadowRoot.querySelector('.viewer-frame');
       frame.classList.remove('is-loading');
+      this.starLoader.remove(frame.querySelector('.gallery-loader'));
       const image = frame.querySelector('img');
       image.hidden = true;
       image.removeAttribute('src');
