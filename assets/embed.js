@@ -51,11 +51,14 @@
     .archive{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(65px,8cqw,125px) clamp(24px,4cqw,64px)}
     .artwork{min-width:0;content-visibility:auto;contain-intrinsic-size:620px}
     .image-button{position:relative;display:block;width:100%;padding:0;border:0;background:#f4f4f2;cursor:zoom-in;aspect-ratio:1/1;overflow:hidden}
-    :host(.da-theme-dark) .image-button.is-loading>.star-loader.is-ready{position:absolute;z-index:1;top:50%;left:50%;display:block;width:clamp(62px,18%,94px);aspect-ratio:1;transform:translate(-50%,-50%)}
+    :host(.da-theme-dark) .image-button.is-loading>.star-loader.is-ready{position:absolute;z-index:1;top:50%;left:50%;display:block;width:clamp(84px,24%,126px);aspect-ratio:1;transform:translate(-50%,-50%)}
     :host(.da-theme-dark) .image-button.is-loading>img{opacity:0}
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
     .meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
+    .artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:0;transform:translateY(14px)}
+    .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkReveal .72s cubic-bezier(.22,1,.36,1) var(--card-reveal-delay,0ms) both}
+    @keyframes artworkReveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
     .meta>div,.meta dl{min-width:0}
     .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0;overflow-wrap:anywhere}
     .year{margin:8px 0 0;color:var(--muted)}
@@ -108,7 +111,7 @@
       .meta dt{font-size:8px;line-height:1.35;padding-top:0;white-space:normal;text-align:left}
       .meta dd{min-width:0;font-size:11px;line-height:1.35;text-align:right;overflow-wrap:anywhere}
     }
-    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.archive-spinner{animation:none!important}}
+    @media(prefers-reduced-motion:reduce){.image-button img{transition:none}.viewer-frame img,.archive-spinner,.artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:none!important}.artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:1;transform:none}}
   `;
 
   function parseCSV(text) {
@@ -357,6 +360,8 @@
       this.galleryPreloadObserver = null;
       this.galleryRequest = 0;
       this.starLoader = null;
+      this.cardRevealRun = 0;
+      this.nextCardRevealAt = 0;
     }
 
     connectedCallback() {
@@ -515,6 +520,8 @@
       this.galleryPreloadObserver?.disconnect();
       const archive = root.querySelector('.archive');
       this.starLoader.removeWithin(archive);
+      this.cardRevealRun += 1;
+      this.nextCardRevealAt = performance.now() + 60;
       archive.innerHTML = visible.map((work, position) => this.cardHTML(work, position)).join('');
       root.querySelector('.no-results').hidden = visible.length !== 0;
       this.bindCardLoaders();
@@ -527,7 +534,7 @@
       const imageTitle = `${work.title}, ${work.year} — David Ambarzumjan`;
       const image = work.images[0];
       const priority = position < 3;
-      return `<article class="artwork">
+      return `<article class="artwork is-reveal-pending" data-reveal-position="${position}">
         <button class="image-button is-loading" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
           <canvas class="star-loader card-loader" aria-hidden="true"></canvas>
           <img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${priority ? 'high' : 'low'}" decoding="async">
@@ -545,17 +552,44 @@
     }
 
     bindCardLoaders() {
+      const revealRun = this.cardRevealRun;
       this.shadowRoot.querySelectorAll('.image-button.is-loading').forEach(button => {
         const image = button.querySelector('img');
         const loader = button.querySelector('.card-loader');
-        const finish = () => {
+        let finished = false;
+        const reveal = () => {
+          if (finished) return;
+          finished = true;
           button.classList.remove('is-loading');
           this.starLoader.remove(loader);
+          this.queueCardReveal(button.closest('.artwork'), revealRun);
+        };
+        const finish = () => {
+          if (finished) return;
+          if (image.naturalWidth && typeof image.decode === 'function') {
+            image.decode().catch(() => {}).then(reveal);
+          } else {
+            reveal();
+          }
         };
         image.addEventListener('load', finish, {once: true});
         image.addEventListener('error', finish, {once: true});
         if (!this.starLoader.add(loader, 64)) button.classList.remove('is-loading');
         if (image.complete) finish();
+      });
+    }
+
+    queueCardReveal(card, revealRun) {
+      if (!card || revealRun !== this.cardRevealRun) return;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const now = performance.now();
+      const revealAt = reduceMotion ? now : Math.max(now + 28, this.nextCardRevealAt);
+      this.nextCardRevealAt = reduceMotion ? now : revealAt + 95;
+      card.style.setProperty('--card-reveal-delay', `${Math.round(revealAt - now)}ms`);
+      requestAnimationFrame(() => {
+        if (revealRun !== this.cardRevealRun || !card.isConnected) return;
+        card.classList.remove('is-reveal-pending');
+        card.classList.add('is-revealed');
       });
     }
 
