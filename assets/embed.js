@@ -191,11 +191,13 @@
           pixelRatio: 1
         };
         this.entries.set(canvas, state);
+        canvas.classList.add('is-ready');
         this.visibilityObserver?.observe(canvas);
         this.resizeObserver?.observe(canvas);
-        this.resize(state);
       }
       canvas.classList.add('is-ready');
+      state.visible = this.isVisible(canvas);
+      this.resize(state);
       this.schedule();
       return true;
     }
@@ -264,6 +266,11 @@
 
     hasVisibleEntries() {
       return [...this.entries.values()].some(state => state.visible && state.canvas.isConnected);
+    }
+
+    isVisible(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth;
     }
 
     schedule() {
@@ -348,7 +355,6 @@
       this.previousBodyOverflow = '';
       this.galleryImageCache = new Map();
       this.galleryPreloadObserver = null;
-      this.galleryOpenRequest = 0;
       this.galleryRequest = 0;
       this.starLoader = null;
     }
@@ -589,21 +595,18 @@
       });
     }
 
-    async openGallery(workIndex) {
+    openGallery(workIndex) {
       const work = this.works[workIndex];
       if (!work || !work.images.length) return;
-      const openRequest = ++this.galleryOpenRequest;
       const gallery = [...new Set(work.images)];
-      await Promise.all(gallery.map(image => this.preloadGalleryImage(image)));
-      if (openRequest !== this.galleryOpenRequest) return;
       this.gallery = gallery;
       this.galleryIndex = 0;
       this.shadowRoot.querySelector('.viewer-caption p').textContent = work.title;
-      await this.renderGalleryImage();
-      if (openRequest !== this.galleryOpenRequest) return;
       this.previousBodyOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       this.shadowRoot.querySelector('.viewer').showModal();
+      this.renderGalleryImage();
+      this.preloadWorkGallery(workIndex);
     }
 
     async renderGalleryImage(direction = 0) {
@@ -646,7 +649,6 @@
 
     closeGallery() {
       const viewer = this.shadowRoot.querySelector('.viewer');
-      this.galleryOpenRequest++;
       this.galleryRequest++;
       if (viewer.open) viewer.close();
       const frame = this.shadowRoot.querySelector('.viewer-frame');
