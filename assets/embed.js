@@ -575,7 +575,7 @@
         };
         image.addEventListener('load', finish, {once: true});
         image.addEventListener('error', finish, {once: true});
-        this.starLoader.add(loader, 148);
+        this.starLoader.add(loader, 108);
         if (image.complete) finish();
       });
     }
