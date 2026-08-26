@@ -52,9 +52,9 @@
     .artwork{min-width:0;content-visibility:auto;contain-intrinsic-size:620px}
     .image-button{position:relative;display:block;width:100%;padding:0;border:0;background:#f4f4f2;cursor:zoom-in;aspect-ratio:1/1;overflow:hidden}
     :host(.da-theme-dark) .image-button>.card-loader.is-ready{position:absolute;z-index:1;top:50%;left:50%;display:none;width:clamp(112px,14vw,160px);height:clamp(112px,14vw,160px);aspect-ratio:1;transform:translate(-50%,-50%);transition:opacity .52s cubic-bezier(.22,1,.36,1)}
-    :host(.da-theme-dark) .image-button.is-loading>.card-loader.is-ready{display:block;opacity:1}
+    :host(.da-theme-dark) .image-button.is-loader-visible>.card-loader.is-ready{display:block;opacity:1}
     :host(.da-theme-dark) .image-button.is-loader-exiting>.card-loader.is-ready{display:block;opacity:0}
-    :host(.da-theme-dark) .image-button.is-loading>img{opacity:0}
+    .image-button.is-loading>img{opacity:0}
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .52s cubic-bezier(.22,1,.36,1),transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
     .meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
@@ -361,10 +361,17 @@
       this.previousBodyOverflow = '';
       this.galleryImageCache = new Map();
       this.galleryPreloadObserver = null;
+      this.imagePriorityObserver = null;
       this.galleryRequest = 0;
       this.starLoader = null;
       this.cardRevealRun = 0;
       this.nextCardRevealAt = 0;
+      this.cardLoadStates = new WeakMap();
+      this.cardTimers = new Set();
+      this.lastScrollY = window.scrollY;
+      this.lastScrollTime = performance.now();
+      this.fastScrollUntil = 0;
+      this.onWindowScroll = () => this.recordScrollVelocity();
     }
 
     connectedCallback() {
@@ -373,11 +380,15 @@
       this.starLoader = new StarMurmurationLoader(this);
       this.starLoader.add(this.shadowRoot.querySelector('.archive-loader'), 148);
       this.bindEvents();
+      window.addEventListener('scroll', this.onWindowScroll, {passive: true});
       this.load();
     }
 
     disconnectedCallback() {
       this.galleryPreloadObserver?.disconnect();
+      this.imagePriorityObserver?.disconnect();
+      this.clearCardTasks();
+      window.removeEventListener('scroll', this.onWindowScroll);
       this.starLoader?.destroy();
     }
 
@@ -521,13 +532,17 @@
         return matchesQuery && (year === 'all' || String(work.year) === year);
       }).sort(compare);
       this.galleryPreloadObserver?.disconnect();
+      this.imagePriorityObserver?.disconnect();
+      this.clearCardTasks();
       const archive = root.querySelector('.archive');
       this.starLoader.removeWithin(archive);
       this.cardRevealRun += 1;
       this.nextCardRevealAt = performance.now() + 60;
+      this.cardLoadStates = new WeakMap();
       archive.innerHTML = visible.map((work, position) => this.cardHTML(work, position)).join('');
       root.querySelector('.no-results').hidden = visible.length !== 0;
       this.bindCardLoaders();
+      this.preloadApproachingCardImages();
       this.preloadVisibleGalleries();
     }
 
@@ -559,43 +574,131 @@
       this.shadowRoot.querySelectorAll('.image-button.is-loading').forEach(button => {
         const image = button.querySelector('img');
         const loader = button.querySelector('.card-loader');
-        let finished = false;
+        const state = {
+          button,
+          image,
+          loader,
+          revealRun,
+          finished: false,
+          decoding: false,
+          spinnerVisible: false,
+          spinnerTimer: 0
+        };
+        state.showSpinner = () => {
+          if (state.finished || state.spinnerTimer || state.spinnerVisible || revealRun !== this.cardRevealRun || !button.isConnected) return;
+          state.spinnerTimer = this.scheduleCardTask(() => {
+            state.spinnerTimer = 0;
+            if (state.finished || revealRun !== this.cardRevealRun || !button.isConnected || !this.classList.contains('da-theme-dark')) return;
+            state.spinnerVisible = this.starLoader.add(loader, 108);
+            if (state.spinnerVisible) button.classList.add('is-loader-visible');
+          }, 480);
+        };
         const reveal = () => {
-          if (finished) return;
-          finished = true;
-          this.queueCardReveal(button.closest('.artwork'), button, loader, revealRun);
+          if (state.finished) return;
+          state.finished = true;
+          this.cancelCardTask(state.spinnerTimer);
+          state.spinnerTimer = 0;
+          this.cardLoadStates.delete(button);
+          this.queueCardReveal(button.closest('.artwork'), button, loader, state.spinnerVisible, revealRun);
         };
         const finish = () => {
-          if (finished) return;
+          if (state.finished || state.decoding) return;
           if (image.naturalWidth && typeof image.decode === 'function') {
-            image.decode().catch(() => {}).then(reveal);
+            state.decoding = true;
+            image.decode().catch(() => {}).then(() => {
+              state.decoding = false;
+              reveal();
+            });
           } else {
             reveal();
           }
         };
         image.addEventListener('load', finish, {once: true});
         image.addEventListener('error', finish, {once: true});
-        this.starLoader.add(loader, 108);
+        this.cardLoadStates.set(button, state);
         if (image.complete) finish();
+        else if (image.loading === 'eager') state.showSpinner();
       });
     }
 
-    queueCardReveal(card, button, loader, revealRun) {
+    scheduleCardTask(callback, delay) {
+      const timer = window.setTimeout(() => {
+        this.cardTimers.delete(timer);
+        callback();
+      }, delay);
+      this.cardTimers.add(timer);
+      return timer;
+    }
+
+    cancelCardTask(timer) {
+      if (!timer) return;
+      window.clearTimeout(timer);
+      this.cardTimers.delete(timer);
+    }
+
+    clearCardTasks() {
+      this.cardTimers.forEach(timer => window.clearTimeout(timer));
+      this.cardTimers.clear();
+    }
+
+    recordScrollVelocity() {
+      const now = performance.now();
+      const elapsed = now - this.lastScrollTime;
+      const distance = Math.abs(window.scrollY - this.lastScrollY);
+      if (elapsed > 0 && distance / elapsed > 1.15) this.fastScrollUntil = now + 520;
+      this.lastScrollY = window.scrollY;
+      this.lastScrollTime = now;
+    }
+
+    preloadApproachingCardImages() {
+      const activate = button => {
+        const state = this.cardLoadStates.get(button);
+        if (!state || state.finished) return;
+        state.image.loading = 'eager';
+        if ('fetchPriority' in state.image) state.image.fetchPriority = 'high';
+        state.showSpinner();
+      };
+      const buttons = [...this.shadowRoot.querySelectorAll('.image-button')];
+      if (!('IntersectionObserver' in window)) {
+        buttons.forEach(activate);
+        return;
+      }
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          activate(entry.target);
+          observer.unobserve(entry.target);
+        });
+      }, {rootMargin: '1800px 0px'});
+      this.imagePriorityObserver = observer;
+      buttons.forEach(button => observer.observe(button));
+    }
+
+    queueCardReveal(card, button, loader, spinnerVisible, revealRun) {
       if (!card || revealRun !== this.cardRevealRun) return;
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const now = performance.now();
-      const revealAt = reduceMotion ? now : Math.max(now + 28, this.nextCardRevealAt);
-      this.nextCardRevealAt = reduceMotion ? now : revealAt + 95;
-      window.setTimeout(() => {
+      const rect = card.getBoundingClientRect();
+      const inViewport = rect.bottom > 0 && rect.top < window.innerHeight;
+      const fastScroll = now < this.fastScrollUntil;
+      if (fastScroll) this.nextCardRevealAt = Math.min(this.nextCardRevealAt, now + 32);
+      const revealAt = reduceMotion || !inViewport ? now : Math.max(now + (fastScroll ? 0 : 20), this.nextCardRevealAt);
+      this.nextCardRevealAt = reduceMotion || !inViewport ? now : revealAt + (fastScroll ? 32 : 95);
+      this.scheduleCardTask(() => {
         if (revealRun !== this.cardRevealRun || !card.isConnected) return;
         button.classList.remove('is-loading');
-        button.classList.add('is-loader-exiting');
+        if (spinnerVisible) {
+          button.classList.remove('is-loader-visible');
+          button.classList.add('is-loader-exiting');
+        }
         card.classList.remove('is-reveal-pending');
         card.classList.add('is-revealed');
-        window.setTimeout(() => {
-          this.starLoader.remove(loader);
-          button.classList.remove('is-loader-exiting');
-        }, reduceMotion ? 0 : 520);
+        if (spinnerVisible) {
+          this.scheduleCardTask(() => {
+            this.starLoader.remove(loader);
+            button.classList.remove('is-loader-exiting');
+          }, reduceMotion ? 0 : 520);
+        }
       }, Math.max(0, Math.round(revealAt - now)));
     }
 
