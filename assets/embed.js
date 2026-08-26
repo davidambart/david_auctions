@@ -371,6 +371,7 @@
       this.lastScrollY = window.scrollY;
       this.lastScrollTime = performance.now();
       this.fastScrollUntil = 0;
+      this.priorityActivationFrame = 0;
       this.onWindowScroll = () => this.recordScrollVelocity();
     }
 
@@ -388,6 +389,7 @@
       this.galleryPreloadObserver?.disconnect();
       this.imagePriorityObserver?.disconnect();
       this.clearCardTasks();
+      if (this.priorityActivationFrame) window.cancelAnimationFrame(this.priorityActivationFrame);
       window.removeEventListener('scroll', this.onWindowScroll);
       this.starLoader?.destroy();
     }
@@ -534,6 +536,8 @@
       this.galleryPreloadObserver?.disconnect();
       this.imagePriorityObserver?.disconnect();
       this.clearCardTasks();
+      if (this.priorityActivationFrame) window.cancelAnimationFrame(this.priorityActivationFrame);
+      this.priorityActivationFrame = 0;
       const archive = root.querySelector('.archive');
       this.starLoader.removeWithin(archive);
       this.cardRevealRun += 1;
@@ -644,20 +648,49 @@
     recordScrollVelocity() {
       const now = performance.now();
       const elapsed = now - this.lastScrollTime;
-      const distance = Math.abs(window.scrollY - this.lastScrollY);
-      if (elapsed > 0 && distance / elapsed > 1.15) this.fastScrollUntil = now + 520;
+      const movement = window.scrollY - this.lastScrollY;
+      const velocity = elapsed > 0 ? Math.abs(movement) / elapsed : 0;
+      if (velocity > 1.15) {
+        this.fastScrollUntil = now + 520;
+        this.prioritizeFastScroll(movement >= 0 ? 1 : -1, velocity);
+      }
       this.lastScrollY = window.scrollY;
       this.lastScrollTime = now;
     }
 
+    promoteCardImage(button, urgent = false) {
+      const state = this.cardLoadStates.get(button);
+      if (!state || state.finished) return false;
+      state.image.loading = 'eager';
+      if ('fetchPriority' in state.image) state.image.fetchPriority = urgent ? 'high' : 'auto';
+      state.showSpinner();
+      return true;
+    }
+
+    prioritizeFastScroll(direction, velocity) {
+      if (this.priorityActivationFrame) return;
+      this.priorityActivationFrame = window.requestAnimationFrame(() => {
+        this.priorityActivationFrame = 0;
+        const leadDistance = Math.min(5200, Math.max(2500, Math.round(velocity * 1900)));
+        const viewportHeight = window.innerHeight;
+        const candidates = [...this.shadowRoot.querySelectorAll('.image-button')].map(button => ({button, rect: button.getBoundingClientRect()})).filter(({rect}) => direction > 0
+          ? rect.bottom > -100 && rect.top < viewportHeight + leadDistance
+          : rect.top < viewportHeight + 100 && rect.bottom > -leadDistance
+        ).sort((a, b) => {
+          const aVisible = a.rect.bottom > 0 && a.rect.top < viewportHeight;
+          const bVisible = b.rect.bottom > 0 && b.rect.top < viewportHeight;
+          if (aVisible !== bVisible) return aVisible ? -1 : 1;
+          return direction > 0 ? a.rect.top - b.rect.top : b.rect.bottom - a.rect.bottom;
+        });
+        let promoted = 0;
+        for (const {button} of candidates) {
+          if (this.promoteCardImage(button, true) && ++promoted >= 9) break;
+        }
+      });
+    }
+
     preloadApproachingCardImages() {
-      const activate = button => {
-        const state = this.cardLoadStates.get(button);
-        if (!state || state.finished) return;
-        state.image.loading = 'eager';
-        if ('fetchPriority' in state.image) state.image.fetchPriority = 'high';
-        state.showSpinner();
-      };
+      const activate = button => this.promoteCardImage(button, true);
       const buttons = [...this.shadowRoot.querySelectorAll('.image-button')];
       if (!('IntersectionObserver' in window)) {
         buttons.forEach(activate);
