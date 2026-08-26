@@ -316,7 +316,7 @@
       const centerY = height / 2;
       const scale = Math.min(width, height);
       const outerRadius = scale * .43;
-      const ringDepth = outerRadius * .43;
+      const ringDepth = outerRadius * .46;
       context.save();
       context.globalCompositeOperation = 'lighter';
       stars.forEach(star => {
@@ -373,7 +373,13 @@
       this.lastScrollTime = performance.now();
       this.fastScrollUntil = 0;
       this.priorityActivationFrame = 0;
+      const squarespaceBlock = this.closest('#block-yui_3_17_2_1_1783829756600_1786');
+      this.pageRevealHeld = Boolean(squarespaceBlock && !squarespaceBlock.classList.contains('da-auction-page-revealed'));
       this.onWindowScroll = () => this.recordScrollVelocity();
+      this.onPageReveal = () => {
+        this.pageRevealHeld = false;
+        this.releaseCardReveals();
+      };
     }
 
     connectedCallback() {
@@ -383,6 +389,7 @@
       this.starLoader.add(this.shadowRoot.querySelector('.archive-loader'), 148);
       this.bindEvents();
       window.addEventListener('scroll', this.onWindowScroll, {passive: true});
+      window.addEventListener('da-auction-page-revealed', this.onPageReveal);
       this.load();
     }
 
@@ -393,6 +400,7 @@
       this.clearCardTasks();
       if (this.priorityActivationFrame) window.cancelAnimationFrame(this.priorityActivationFrame);
       window.removeEventListener('scroll', this.onWindowScroll);
+      window.removeEventListener('da-auction-page-revealed', this.onPageReveal);
       this.starLoader?.destroy();
     }
 
@@ -605,13 +613,14 @@
           }, 480);
         };
         state.queueReveal = () => {
-          if (!state.ready || !state.inRevealRange || state.revealQueued || revealRun !== this.cardRevealRun || !button.isConnected) return;
+          if (!state.ready || !state.inRevealRange || state.revealQueued || this.pageRevealHeld || revealRun !== this.cardRevealRun || !button.isConnected) return;
           state.revealQueued = true;
           this.queueCardReveal(button.closest('.artwork'), button, loader, state.spinnerVisible, revealRun, state.fastReveal);
         };
         const markReady = () => {
           if (state.ready) return;
           state.ready = true;
+          button.dataset.imageReady = 'true';
           this.cancelCardTask(state.spinnerTimer);
           state.spinnerTimer = 0;
           state.queueReveal();
@@ -659,6 +668,12 @@
       }, {rootMargin: '650px 0px'});
       this.cardRevealObserver = observer;
       cards.forEach(card => observer.observe(card));
+    }
+
+    releaseCardReveals() {
+      this.shadowRoot?.querySelectorAll('.image-button').forEach(button => {
+        this.cardLoadStates.get(button)?.queueReveal();
+      });
     }
 
     scheduleCardTask(callback, delay) {
