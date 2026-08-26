@@ -316,7 +316,7 @@
       const centerY = height / 2;
       const scale = Math.min(width, height);
       const outerRadius = scale * .43;
-      const ringDepth = outerRadius * .4;
+      const ringDepth = outerRadius * .43;
       context.save();
       context.globalCompositeOperation = 'lighter';
       stars.forEach(star => {
