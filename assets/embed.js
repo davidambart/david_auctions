@@ -50,7 +50,7 @@
     .reset{margin-left:auto;background:transparent;border:0;color:var(--ink);text-transform:uppercase;letter-spacing:.12em;font-size:11px;cursor:pointer;padding:10px}
     .archive{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(65px,8cqw,125px) clamp(24px,4cqw,64px)}
     .artwork{min-width:0;content-visibility:auto;contain-intrinsic-size:620px}
-    .image-button{position:relative;display:block;width:100%;padding:0;border:0;background:#f4f4f2;cursor:zoom-in;aspect-ratio:1/1;overflow:hidden}
+    .image-button{position:relative;display:block;width:100%;padding:0;border:0;background:transparent;cursor:zoom-in;aspect-ratio:1/1;overflow:hidden}
     :host(.da-theme-dark) .image-button>.card-loader.is-ready{position:absolute;z-index:1;top:50%;left:50%;display:none;width:clamp(112px,14vw,160px);height:clamp(112px,14vw,160px);aspect-ratio:1;transform:translate(-50%,-50%);transition:opacity .52s cubic-bezier(.22,1,.36,1)}
     :host(.da-theme-dark) .image-button.is-loader-visible>.card-loader.is-ready{display:block;opacity:1}
     :host(.da-theme-dark) .image-button.is-loader-exiting>.card-loader.is-ready{display:block;opacity:0}
@@ -362,6 +362,7 @@
       this.galleryImageCache = new Map();
       this.galleryPreloadObserver = null;
       this.imagePriorityObserver = null;
+      this.cardRevealObserver = null;
       this.galleryRequest = 0;
       this.starLoader = null;
       this.cardRevealRun = 0;
@@ -388,6 +389,7 @@
     disconnectedCallback() {
       this.galleryPreloadObserver?.disconnect();
       this.imagePriorityObserver?.disconnect();
+      this.cardRevealObserver?.disconnect();
       this.clearCardTasks();
       if (this.priorityActivationFrame) window.cancelAnimationFrame(this.priorityActivationFrame);
       window.removeEventListener('scroll', this.onWindowScroll);
@@ -535,6 +537,7 @@
       }).sort(compare);
       this.galleryPreloadObserver?.disconnect();
       this.imagePriorityObserver?.disconnect();
+      this.cardRevealObserver?.disconnect();
       this.clearCardTasks();
       if (this.priorityActivationFrame) window.cancelAnimationFrame(this.priorityActivationFrame);
       this.priorityActivationFrame = 0;
@@ -546,6 +549,7 @@
       archive.innerHTML = visible.map((work, position) => this.cardHTML(work, position)).join('');
       root.querySelector('.no-results').hidden = visible.length !== 0;
       this.bindCardLoaders();
+      this.observeCardReveals();
       this.preloadApproachingCardImages();
       this.preloadVisibleGalleries();
     }
@@ -583,38 +587,45 @@
           image,
           loader,
           revealRun,
-          finished: false,
+          ready: false,
           decoding: false,
           spinnerVisible: false,
-          spinnerTimer: 0
+          spinnerTimer: 0,
+          inRevealRange: false,
+          revealQueued: false,
+          fastReveal: false
         };
         state.showSpinner = () => {
-          if (state.finished || state.spinnerTimer || state.spinnerVisible || revealRun !== this.cardRevealRun || !button.isConnected) return;
+          if (state.ready || state.spinnerTimer || state.spinnerVisible || revealRun !== this.cardRevealRun || !button.isConnected) return;
           state.spinnerTimer = this.scheduleCardTask(() => {
             state.spinnerTimer = 0;
-            if (state.finished || revealRun !== this.cardRevealRun || !button.isConnected || !this.classList.contains('da-theme-dark')) return;
+            if (state.ready || revealRun !== this.cardRevealRun || !button.isConnected || !this.classList.contains('da-theme-dark')) return;
             state.spinnerVisible = this.starLoader.add(loader, 108);
             if (state.spinnerVisible) button.classList.add('is-loader-visible');
           }, 480);
         };
-        const reveal = () => {
-          if (state.finished) return;
-          state.finished = true;
+        state.queueReveal = () => {
+          if (!state.ready || !state.inRevealRange || state.revealQueued || revealRun !== this.cardRevealRun || !button.isConnected) return;
+          state.revealQueued = true;
+          this.queueCardReveal(button.closest('.artwork'), button, loader, state.spinnerVisible, revealRun, state.fastReveal);
+        };
+        const markReady = () => {
+          if (state.ready) return;
+          state.ready = true;
           this.cancelCardTask(state.spinnerTimer);
           state.spinnerTimer = 0;
-          this.cardLoadStates.delete(button);
-          this.queueCardReveal(button.closest('.artwork'), button, loader, state.spinnerVisible, revealRun);
+          state.queueReveal();
         };
         const finish = () => {
-          if (state.finished || state.decoding) return;
+          if (state.ready || state.decoding) return;
           if (image.naturalWidth && typeof image.decode === 'function') {
             state.decoding = true;
             image.decode().catch(() => {}).then(() => {
               state.decoding = false;
-              reveal();
+              markReady();
             });
           } else {
-            reveal();
+            markReady();
           }
         };
         image.addEventListener('load', finish, {once: true});
@@ -623,6 +634,31 @@
         if (image.complete) finish();
         else if (image.loading === 'eager') state.showSpinner();
       });
+    }
+
+    observeCardReveals() {
+      const activate = card => {
+        const button = card.querySelector('.image-button');
+        const state = this.cardLoadStates.get(button);
+        if (!state) return;
+        state.inRevealRange = true;
+        state.fastReveal = state.fastReveal || performance.now() < this.fastScrollUntil;
+        state.queueReveal();
+      };
+      const cards = [...this.shadowRoot.querySelectorAll('.artwork')];
+      if (!('IntersectionObserver' in window)) {
+        cards.forEach(activate);
+        return;
+      }
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          activate(entry.target);
+          observer.unobserve(entry.target);
+        });
+      }, {rootMargin: '650px 0px'});
+      this.cardRevealObserver = observer;
+      cards.forEach(card => observer.observe(card));
     }
 
     scheduleCardTask(callback, delay) {
@@ -660,7 +696,7 @@
 
     promoteCardImage(button, urgent = false) {
       const state = this.cardLoadStates.get(button);
-      if (!state || state.finished) return false;
+      if (!state || state.ready) return false;
       state.image.loading = 'eager';
       if ('fetchPriority' in state.image) state.image.fetchPriority = urgent ? 'high' : 'auto';
       state.showSpinner();
@@ -707,18 +743,17 @@
       buttons.forEach(button => observer.observe(button));
     }
 
-    queueCardReveal(card, button, loader, spinnerVisible, revealRun) {
+    queueCardReveal(card, button, loader, spinnerVisible, revealRun, fastReveal) {
       if (!card || revealRun !== this.cardRevealRun) return;
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const now = performance.now();
-      const rect = card.getBoundingClientRect();
-      const inViewport = rect.bottom > 0 && rect.top < window.innerHeight;
-      const fastScroll = now < this.fastScrollUntil;
+      const fastScroll = fastReveal || now < this.fastScrollUntil;
       if (fastScroll) this.nextCardRevealAt = Math.min(this.nextCardRevealAt, now + 32);
-      const revealAt = reduceMotion || !inViewport ? now : Math.max(now + (fastScroll ? 0 : 20), this.nextCardRevealAt);
-      this.nextCardRevealAt = reduceMotion || !inViewport ? now : revealAt + (fastScroll ? 32 : 95);
+      const revealAt = reduceMotion ? now : Math.max(now + (fastScroll ? 0 : 20), this.nextCardRevealAt);
+      this.nextCardRevealAt = reduceMotion ? now : revealAt + (fastScroll ? 64 : 95);
       this.scheduleCardTask(() => {
         if (revealRun !== this.cardRevealRun || !card.isConnected) return;
+        this.cardLoadStates.delete(button);
         button.classList.remove('is-loading');
         if (spinnerVisible) {
           button.classList.remove('is-loader-visible');
