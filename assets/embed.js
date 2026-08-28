@@ -825,6 +825,9 @@
       const work = this.works[workIndex];
       if (!work || !work.images.length) return;
       const gallery = [...new Set(work.images)];
+      if (work.auctionEndISO >= '2023-12-01' && gallery.length > 1) {
+        [gallery[0], gallery[1]] = [gallery[1], gallery[0]];
+      }
       this.gallery = gallery;
       this.galleryIndex = 0;
       this.shadowRoot.querySelector('.viewer-caption p').textContent = work.title;
