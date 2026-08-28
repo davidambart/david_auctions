@@ -62,7 +62,7 @@
     .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkReveal .72s cubic-bezier(.22,1,.36,1) both}
     @keyframes artworkReveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
     .meta>div,.meta dl{min-width:0}
-    .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0;overflow-wrap:anywhere}
+    .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0;overflow-wrap:normal;word-break:normal}
     .year{margin:8px 0 0;color:var(--muted)}
     dl{width:100%;margin:0;min-width:0}
     dl div{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:clamp(8px,1.5cqw,20px);padding:2px 0 5px}
