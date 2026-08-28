@@ -235,18 +235,17 @@
     }
 
     makeStars(count) {
-      const tones = ['232,220,198', '203,227,230', '237,242,238'];
       return Array.from({length: count}, (_, index) => {
         const seed = (index * 0.61803398875) % 1;
         return {
-          angle: index * 2.3999632297,
-          band: .18 + ((index * 37) % 100) / 100 * .78,
-          drift: seed * Math.PI * 2,
-          glow: .5 + ((index * 19) % 100) / 100 * .5,
-          lane: ((index * 29) % 100) / 100 - .5,
-          size: .48 + ((index * 43) % 100) / 100 * 1.18,
-          sparkle: ((index * 71) % 100) / 100,
-          tone: tones[index % tones.length]
+          angle: (index / count) * Math.PI * 2,
+          band: seed * Math.PI * 2,
+          drift: .77 + ((index * 17) % 19) / 42,
+          glow: .46 + ((index * 11) % 23) / 38,
+          lane: (((index * 7) % 13) - 6) / 6,
+          size: .38 + ((index * 29) % 31) / 28,
+          sparkle: (index * 1.91) % (Math.PI * 2),
+          tone: index % 11 === 0 ? 'warm' : index % 7 === 0 ? 'cool' : 'white'
         };
       });
     }
@@ -315,37 +314,38 @@
       const centerX = width / 2;
       const centerY = height / 2;
       const scale = Math.min(width, height);
-      const outerRadius = scale * .43;
-      const ringDepth = outerRadius * .5;
-      context.save();
-      context.globalCompositeOperation = 'lighter';
+      const orbitRadius = scale * .31;
       stars.forEach(star => {
-        const flockWave = Math.sin(time * 1.15 + star.drift) * .055;
-        const ripple = Math.sin(time * 1.65 + star.angle * 2.15 + star.drift) * .028;
-        const angle = star.angle + time * (.6 + star.band * .12) + Math.sin(time * .78 + star.drift) * .085;
-        const radialBreath = Math.sin(time * 1.28 + star.drift) * outerRadius * .025;
-        const bandWidth = ringDepth * (.32 + star.band * .31);
-        const freeLane = star.lane + flockWave + ripple;
+        const flockWave = Math.sin(time * 1.12 + star.band) * .22;
+        const ripple = Math.sin(time * 1.94 + star.band * 2.7) * .09;
+        const angle = star.angle + time * (.96 + flockWave * .42) * star.drift;
+        const radialBreath = Math.sin(time * 1.28 + star.band * 1.6) * scale * .038;
+        const bandWidth = scale * (.08 + Math.sin(time * .72 + star.band * 2.1) * .028);
+        const freeLane = star.lane * bandWidth + radialBreath;
         const lane = freeLane < 0 ? freeLane * .52 : freeLane * .9;
-        const rawWobble = Math.sin(time * 1.47 + star.drift) * ringDepth * .09;
-        const wobble = star.lane < 0 ? rawWobble * 0.34 : rawWobble;
-        const radius = outerRadius - bandWidth * .17 + lane * bandWidth + radialBreath + wobble;
-        const x = centerX + Math.cos(angle) * radius;
-        const y = centerY + Math.sin(angle) * radius;
-        const twinkle = .7 + Math.sin(time * 2.8 + star.sparkle * Math.PI * 2) * .3;
-        const opacity = (.42 + star.glow * .45) * twinkle;
-        const pointSize = star.size * (.72 + twinkle * .28);
-        this.drawStar(context, x, y, pointSize, opacity, star.tone);
-        if (star.size > 1.2) this.drawStar(context, x, y, pointSize * 2.2, opacity * .07, star.tone);
+        const rawWobble = Math.sin(angle * 3 + time * 1.38 + star.band) * scale * .023;
+        const wobble = star.lane < 0 ? rawWobble * .34 : rawWobble;
+        const x = centerX + Math.cos(angle + ripple) * (orbitRadius + lane + wobble);
+        const y = centerY + Math.sin(angle + ripple) * (orbitRadius * .82 + lane * .82 + wobble * .46);
+        const pulse = .72 + Math.sin(time * 2.2 + star.sparkle) * .24;
+        const head = .42 + .58 * Math.max(0, Math.sin(angle - time * .85));
+        const opacity = star.glow * pulse * (.62 + head * .44);
+        this.drawStar(context, x, y, Math.max(.35, star.size * scale * .008 * (.72 + head * .5)), opacity, star.tone);
       });
-      context.restore();
     }
 
     drawStar(context, x, y, radius, opacity, tone) {
+      const color = tone === 'warm' ? '232,220,198' : tone === 'cool' ? '203,227,230' : '237,242,238';
       context.beginPath();
-      context.fillStyle = `rgba(${tone},${opacity})`;
+      context.fillStyle = `rgba(${color},${opacity})`;
       context.arc(x, y, radius, 0, Math.PI * 2);
       context.fill();
+      if (radius > .78) {
+        context.beginPath();
+        context.fillStyle = `rgba(${color},${opacity * .19})`;
+        context.arc(x, y, radius * 3.2, 0, Math.PI * 2);
+        context.fill();
+      }
     }
   }
 
