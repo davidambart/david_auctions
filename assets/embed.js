@@ -82,7 +82,7 @@
     .viewer-caption{height:62px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 24px}
     .viewer-caption p{grid-column:2;margin:0;font:400 22px "Cormorant Garamond",Georgia,serif;text-align:center}
     .image-counter{grid-column:3;justify-self:end;font-size:10px;letter-spacing:.14em;color:#bbb}
-    .close{position:fixed;right:20px;top:15px;z-index:3;border:0;background:rgba(0,0,0,.55);color:#fff;width:42px;height:42px;border-radius:50%;font-size:28px;line-height:1;cursor:pointer;padding:0}
+    .close{position:fixed;right:20px;top:15px;z-index:3;border:0;border-bottom:0!important;outline:0;box-shadow:none;appearance:none;-webkit-appearance:none;text-decoration:none;background:rgba(0,0,0,.55);color:#fff;width:42px;height:42px;border-radius:50%;font-size:28px;line-height:1;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}.close:focus,.close:focus-visible{outline:0;box-shadow:none}
     .gallery-nav{position:fixed;z-index:2;top:50%;transform:translateY(-50%);width:56px;height:56px;border:0;border-radius:50%;background:rgba(0,0,0,.28);color:#fff;cursor:pointer;display:grid;place-items:center;padding:0;font-size:0;line-height:1}
     .gallery-nav::before{content:"";width:14px;height:14px;border-left:2.5px solid currentColor;border-bottom:2.5px solid currentColor}
     .previous::before{transform:rotate(45deg)}.next::before{transform:rotate(225deg)}
