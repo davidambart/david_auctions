@@ -59,7 +59,7 @@
     .image-button:hover img{transform:scale(1.015)}
     .meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
     .artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:0}
-    .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkAppear .52s ease both}
+    .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkAppear .68s ease both}
     @keyframes artworkAppear{from{opacity:0}to{opacity:1}}
     .meta>div,.meta dl{min-width:0}
     .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0;overflow-wrap:normal;word-break:normal}
