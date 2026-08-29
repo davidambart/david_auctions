@@ -83,10 +83,10 @@
     .viewer-caption p{grid-column:2;margin:0;font:400 22px "Cormorant Garamond",Georgia,serif;text-align:center}
     .image-counter{grid-column:3;justify-self:end;font-size:10px;letter-spacing:.14em;color:#bbb}
     .close{position:fixed;right:20px;top:15px;z-index:3;border:0;background:rgba(0,0,0,.55);color:#fff;width:42px;height:42px;border-radius:50%;font-size:28px;line-height:1;cursor:pointer;padding:0}
-    .gallery-nav{position:fixed;z-index:2;top:50%;transform:translateY(-50%);width:56px;height:56px;border:0;border-radius:50%;background:rgba(38,44,43,.84);color:#fff;cursor:pointer;display:grid;place-items:center;padding:0;font-size:0;line-height:1}
+    .gallery-nav{position:fixed;z-index:2;top:50%;transform:translateY(-50%);width:56px;height:56px;border:0;border-radius:50%;background:rgba(0,0,0,.28);color:#fff;cursor:pointer;display:grid;place-items:center;padding:0;font-size:0;line-height:1}
     .gallery-nav::before{content:"";width:14px;height:14px;border-left:2.5px solid currentColor;border-bottom:2.5px solid currentColor}
-    .previous::before{transform:rotate(45deg);margin-left:5px}.next::before{transform:rotate(225deg);margin-right:5px}
-    .gallery-nav:hover{background:rgba(58,68,66,.9)}
+    .previous::before{transform:rotate(45deg)}.next::before{transform:rotate(225deg)}
+    .gallery-nav:hover{background:rgba(0,0,0,.42)}
     .previous{left:14px}.next{right:14px}
     .slide-left{animation:slideLeft .24s ease}.slide-right{animation:slideRight .24s ease}
     @keyframes slideLeft{from{opacity:.35;transform:translateX(18px)}to{opacity:1;transform:none}}
@@ -103,7 +103,7 @@
       .select-controls label{flex:1;min-width:0}
       h1{font-size:70px}.meta{grid-template-columns:minmax(0,50%) minmax(0,50%);gap:0;padding-top:20px}.meta dl{width:100%;max-width:none;min-width:0}.meta dl>div{display:grid;grid-template-columns:minmax(0,35%) minmax(0,1fr);align-items:start;gap:clamp(4px,1cqw,8px);padding:2px 0 7px}.meta dt{font-size:10px;line-height:1.35;padding-top:2px;white-space:nowrap;text-align:left}.meta dd{min-width:0;font-size:13px;line-height:1.35;text-align:right;overflow-wrap:anywhere}.meta h2{font-size:38px}.year{font-size:17px}
       :host(.da-theme-dark) .image-button>.card-loader.is-ready{width:clamp(104px,31vw,136px);height:clamp(104px,31vw,136px)}
-      .gallery-nav{width:48px;height:48px;background:rgba(38,44,43,.8)}.gallery-nav::before{width:12px;height:12px;border-width:2.25px}.previous{left:4px}.next{right:4px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:9px}.close{right:10px;top:10px}
+      .gallery-nav{width:48px;height:48px;background:rgba(0,0,0,.24)}.gallery-nav::before{width:12px;height:12px;border-width:2.25px}.previous{left:4px}.next{right:4px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:9px}.close{right:10px;top:10px}
     }
     @media(max-width:430px){.meta{grid-template-columns:minmax(0,50%) minmax(0,50%)}.meta dl>div{gap:4px}.meta dt{font-size:9px}.meta dd{font-size:12px}.meta dl>div:first-child{grid-template-columns:58px minmax(0,1fr)!important;column-gap:6px!important}.meta dl>div:first-child dd{white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important}}
     @media(max-width:760px) and (orientation:landscape){
