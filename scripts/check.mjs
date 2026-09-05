@@ -18,7 +18,7 @@ const context = vm.createContext({
     decode() { return Promise.resolve(); }
   }
 });
-const instrumentedSource = source.replace('  class StarMurmurationLoader {', '  globalThis.audit = {parseCSV, escapeHTML, resultInEuro, baseUrl};\n  class StarMurmurationLoader {');
+const instrumentedSource = source.replace('  class StarMurmurationLoader {', '  globalThis.audit = {parseCSV, escapeHTML, resultInEuro, baseUrl, galleryImages};\n  class StarMurmurationLoader {');
 vm.runInContext(instrumentedSource, context);
 const { parseCSV, escapeHTML, resultInEuro } = context.audit;
 const works = parseCSV(readFileSync(new URL('data/auctions.csv', base), 'utf8'));
@@ -28,6 +28,10 @@ let imageCount = 0;
 for (const work of works) {
   assert.ok(work.title && work.year && /^\d{4}-\d{2}-\d{2}$/.test(work.auctionEndISO));
   assert.ok(Number.isFinite(resultInEuro(work)) && resultInEuro(work) > 0);
+  if (work.thumbnail) {
+    assert.ok(existsSync(fileURLToPath(new URL(work.thumbnail, base))), `Missing thumbnail: ${work.thumbnail}`);
+    assert.ok(!work.images.split('|').map(path => path.trim()).includes(work.thumbnail), 'Thumbnail must remain outside the gallery');
+  }
   for (const path of work.images.split('|').map(path => path.trim()).filter(Boolean)) {
     assert.ok(existsSync(fileURLToPath(new URL(path, base))), `Missing image: ${path}`);
     imageCount++;
@@ -71,12 +75,20 @@ archive.closeGallery();
 assert.equal(context.document.body.style.overflow, 'auto');
 assert.equal(viewer.open, false);
 
-const missingImageWork = {...works[0], images: []};
+const missingImageWork = {...works[0], thumbnail: '', images: []};
 archive.works = [missingImageWork];
 const missingImageCard = archive.cardHTML(missingImageWork, 0);
 assert.ok(missingImageCard.includes('Image not yet available'));
 assert.ok(missingImageCard.includes('disabled'));
 assert.ok(!missingImageCard.includes('<img'));
+
+const portraitWork = {...works[0], images: works[0].images.split('|').map(path => path.trim())};
+archive.works = [portraitWork];
+assert.ok(archive.cardHTML(portraitWork, 0).includes(`src="${portraitWork.thumbnail}"`));
+assert.deepEqual(Array.from(context.audit.galleryImages(portraitWork)), portraitWork.images);
+const legacyWork = {...portraitWork, thumbnail: ''};
+assert.ok(archive.cardHTML(legacyWork, 0).includes(`src="${legacyWork.images[0]}"`));
+assert.equal(context.audit.galleryImages(legacyWork)[0], legacyWork.images[1]);
 
 // Both frontends must accept the same spreadsheet export and price formats.
 const appSource = readFileSync(new URL('assets/app.js', base), 'utf8');
@@ -85,6 +97,11 @@ vm.runInContext(appSource.slice(appSource.indexOf('function parseCSV('), appSour
 assert.equal(standalone.parseCSV(readFileSync(new URL('data/auctions.csv', base), 'utf8')).length, works.length);
 for (const bid of ['13000,00 €', '13.000,00 €', '13,000.00 EUR', '13000€']) assert.equal(standalone.bidValue(bid), 13000);
 assert.equal(standalone.bidValue('$1300 USD'), 1300);
+vm.runInContext(appSource.slice(appSource.indexOf('// ECB daily'), appSource.indexOf('function setupViewer(')), standalone);
+const standaloneCard = standalone.card(portraitWork, 0);
+assert.ok(standaloneCard.includes(`src="${portraitWork.thumbnail}"`));
+assert.ok(standaloneCard.includes('data-images='));
+assert.ok(standalone.card(legacyWork, 0).includes(`src="${legacyWork.images[0]}"`));
 
 // Versioned application code can use independently updated GitHub Pages content.
 context.document.currentScript.dataset.baseUrl = 'https://davidambart.github.io/david_auctions/';

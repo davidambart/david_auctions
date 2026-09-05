@@ -80,10 +80,11 @@ function card(w,position){
   const charity=w.charity?`<div class="charity-row"><dt>Charity</dt><dd>${esc(w.charity)}</dd></div>`:'';
   const imgs=esc(JSON.stringify(w.images));
   const imageTitle=`${w.title}, ${w.year} — David Ambarzumjan`;
-  const image=w.images[0];
+  const image=w.thumbnail||w.images[0];
+  const hasGallery=w.images.length>0;
   const priority=position<3;
   return `<article class="artwork" data-title="${esc(w.title.toLowerCase())}" data-year="${esc(w.year)}" data-auction-date="${esc(w.auctionEndISO)}" data-result-eur="${auctionResultEuro(w)}" data-id="${esc(w.id)}">
-    <button class="image-button" type="button" aria-label="${image?`View ${esc(w.title)} image gallery`:`Image not yet available for ${esc(w.title)}`}" data-images='${imgs}' data-title="${esc(w.title)}" ${image?'':'disabled'}>
+    <button class="image-button" type="button" aria-label="${hasGallery?`View ${esc(w.title)} image gallery`:`Gallery not yet available for ${esc(w.title)}`}" data-images='${imgs}' data-title="${esc(w.title)}" ${hasGallery?'':'disabled'}>
       ${image?`<img src="${esc(image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" width="800" height="800" loading="${priority?'eager':'lazy'}" fetchpriority="${priority?'high':'low'}" decoding="async">`:'<span>Image not yet available</span>'}
     </button>
     <div class="meta">
@@ -130,7 +131,7 @@ reportEmbedHeight();
 async function init(){
   try{
     const response=await fetch('data/auctions.csv'); if(!response.ok) throw new Error(response.status);
-    data=parseCSV(await response.text()).map(w=>({...w,images:w.images.split('|').map(x=>x.trim()).filter(Boolean)}));
+    data=parseCSV(await response.text()).map(w=>({...w,thumbnail:w.thumbnail?.trim()||'',images:w.images.split('|').map(x=>x.trim()).filter(Boolean)}));
     data.sort((a,b)=>String(b.auctionEndISO).localeCompare(String(a.auctionEndISO))||Number(a.id)-Number(b.id));
     const years=[...new Set(data.map(w=>String(w.year)))].sort((a,b)=>Number(b)-Number(a)); years.forEach(y=>yearSelect.insertAdjacentHTML('beforeend',`<option value="${esc(y)}">${esc(y)}</option>`));
     const nums=data.map(w=>Number(w.year)).filter(Number.isFinite); archiveSummary=nums.length?`${data.length} works · ${Math.min(...nums)}–${Math.max(...nums)}`:'0 works';document.querySelector('#count').textContent=archiveSummary;

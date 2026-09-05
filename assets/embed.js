@@ -167,6 +167,16 @@
     return rate ? Math.round(amount / rate * 100) / 100 : amount;
   }
 
+  function galleryImages(work) {
+    const gallery = [...new Set(work.images)];
+    // Existing records use the first image as a thumbnail. New records with
+    // a dedicated thumbnail keep their explicitly listed gallery order.
+    if (!work.thumbnail && work.auctionEndISO >= '2023-12-01' && gallery.length > 1) {
+      [gallery[0], gallery[1]] = [gallery[1], gallery[0]];
+    }
+    return gallery;
+  }
+
   class StarMurmurationLoader {
     constructor(host) {
       this.host = host;
@@ -535,6 +545,7 @@
         this.works = parseCSV(csv).map(work => ({
           ...work,
           resultEUR: resultInEuro(work),
+          thumbnail: work.thumbnail?.trim() ? new URL(work.thumbnail.trim(), baseUrl).href : '',
           images: work.images.split('|').map(path => path.trim()).filter(Boolean).map(path => new URL(path, baseUrl).href)
         }));
         const years = [...new Set(this.works.map(work => String(work.year)))].sort((a, b) => Number(b) - Number(a));
@@ -595,10 +606,11 @@
       const index = this.works.indexOf(work);
       const charity = work.charity ? `<div class="charity-row"><dt>Charity</dt><dd>${escapeHTML(work.charity)}</dd></div>` : '';
       const imageTitle = `${work.title}, ${work.year} — David Ambarzumjan`;
-      const image = work.images[0];
+      const image = work.thumbnail || work.images[0];
+      const hasGallery = work.images.length > 0;
       const priority = position < 3;
       return `<article class="artwork is-reveal-pending" data-reveal-position="${position}">
-        <button class="image-button is-loading" type="button" data-index="${index}" aria-label="${image ? `View ${escapeHTML(work.title)} image gallery` : `Image not yet available for ${escapeHTML(work.title)}`}" ${image ? '' : 'disabled'}>
+        <button class="image-button is-loading" type="button" data-index="${index}" aria-label="${hasGallery ? `View ${escapeHTML(work.title)} image gallery` : `Gallery not yet available for ${escapeHTML(work.title)}`}" ${hasGallery ? '' : 'disabled'}>
           <canvas class="star-loader card-loader" aria-hidden="true"></canvas>
           ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${position < 3 ? 'high' : 'auto'}" decoding="async">` : '<span>Image not yet available</span>'}
         </button>
@@ -849,11 +861,7 @@
     openGallery(workIndex) {
       const work = this.works[workIndex];
       if (!work || !work.images.length) return;
-      const gallery = [...new Set(work.images)];
-      if (work.auctionEndISO >= '2023-12-01' && gallery.length > 1) {
-        [gallery[0], gallery[1]] = [gallery[1], gallery[0]];
-      }
-      this.gallery = gallery;
+      this.gallery = galleryImages(work);
       this.galleryIndex = 0;
       this.shadowRoot.querySelector('.viewer-caption p').textContent = work.title;
       this.previousBodyOverflow = document.body.style.overflow;

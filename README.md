@@ -7,6 +7,7 @@ The archive is embedded in Squarespace. GitHub Pages publishes the `main` branch
 1. Upload images into `assets/images/`. Start with the painting name, for example `witnesses-2026-david-ambarzumjan-01.jpg`. The final `01`, `02`, etc. identifies the gallery image; no auction number belongs at the beginning.
 2. Add a row to `data/auctions.csv`. Keep the column names. Both semicolon-delimited spreadsheet exports and comma-delimited CSV files are supported. Use an ISO auction date such as `2026-09-03`.
 3. In the `images` cell, list the paths separated by ` | `, for example `assets/images/witnesses-2026-david-ambarzumjan-01.jpg | assets/images/witnesses-2026-david-ambarzumjan-02.jpg`.
+   For a non-square painting, add a separate square thumbnail named `witnesses-2026-david-ambarzumjan-thumb.jpg` and put its path in the optional `thumbnail` column. Keep it out of the `images` list. The grid uses this square thumbnail; the gallery shows the numbered full-format images in the listed order, fitted without cropping. If `thumbnail` is blank, the grid uses the first gallery image as before.
 4. Commit and push to `main`. Allow the GitHub Pages deployment and browser cache to refresh.
 
 IDs should be unique and stable. Existing auctions do not need to be renumbered when a new one is added. Prices such as `13000,00 €`, `13.000,00 €`, `13,000.00 EUR`, and `$1300 USD` are supported. Records without images display an explicit placeholder and no active gallery button.
