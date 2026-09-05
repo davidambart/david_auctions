@@ -59,7 +59,7 @@
     .image-button.is-loading>img{opacity:0}
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .52s cubic-bezier(.22,1,.36,1),transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
-    .crop-expand{position:absolute;z-index:2;top:0;right:0;width:88px;height:88px;pointer-events:none;background:radial-gradient(ellipse at top right,rgba(0,0,0,.42),rgba(0,0,0,.16) 38%,transparent 72%);color:rgba(255,255,255,.85)}
+    .crop-expand{position:absolute;z-index:2;top:0;right:0;width:100%;height:88px;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.42),rgba(0,0,0,.16) 38%,transparent);color:rgba(255,255,255,.85)}
     .crop-expand svg{position:absolute;top:14px;right:14px;width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
     .image-button:hover .crop-expand,.image-button:focus-visible .crop-expand{color:#fff}
     .image-button.is-loading .crop-expand{visibility:hidden}
