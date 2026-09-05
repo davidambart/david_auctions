@@ -60,10 +60,10 @@
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .52s cubic-bezier(.22,1,.36,1),transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
     .crop-expand{position:absolute;z-index:2;top:0;right:0;width:100%;height:120px;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.42),rgba(0,0,0,.16) 38%,transparent);color:rgba(255,255,255,.65)}
-    .crop-bottom-gradient{position:absolute;z-index:1;right:0;bottom:0;width:100%;height:120px;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.42),rgba(0,0,0,.16) 38%,transparent)}
+    .crop-edge-gradient{position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.42),rgba(0,0,0,.16) 46px,transparent 120px),linear-gradient(to right,rgba(0,0,0,.32),rgba(0,0,0,.12) 32px,transparent 100px),linear-gradient(to left,rgba(0,0,0,.32),rgba(0,0,0,.12) 32px,transparent 100px)}
     .crop-expand svg{position:absolute;top:14px;right:14px;width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
     .image-button:hover .crop-expand,.image-button:focus-visible .crop-expand{color:rgba(255,255,255,.82)}
-    .image-button.is-loading .crop-expand,.image-button.is-loading .crop-bottom-gradient{visibility:hidden}
+    .image-button.is-loading .crop-expand,.image-button.is-loading .crop-edge-gradient{visibility:hidden}
     .image-button:disabled{cursor:default;color:var(--muted);font:inherit;border:1px solid var(--line)}
     .meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
     .artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:0}
@@ -625,7 +625,7 @@
         <button class="image-button is-loading" type="button" data-index="${index}" aria-label="${hasGallery ? `View ${escapeHTML(work.title)} image gallery` : `Gallery not yet available for ${escapeHTML(work.title)}`}" ${hasGallery ? '' : 'disabled'}>
           <canvas class="star-loader card-loader" aria-hidden="true"></canvas>
           ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${position < 3 ? 'high' : 'auto'}" decoding="async">` : '<span>Image not yet available</span>'}
-          ${work.thumbnail && hasGallery ? '<span class="crop-bottom-gradient" aria-hidden="true"></span>' : ''}
+          ${work.thumbnail && hasGallery ? '<span class="crop-edge-gradient" aria-hidden="true"></span>' : ''}
           ${work.thumbnail && hasGallery ? '<span class="crop-expand" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3h8v8M3 13v8h8"/></svg></span>' : ''}
         </button>
         <div class="meta">
