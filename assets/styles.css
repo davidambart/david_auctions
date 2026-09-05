@@ -4,7 +4,7 @@
 .image-button:disabled{cursor:default;color:var(--muted);font:inherit;border:1px solid var(--line)}
 .image-button{position:relative}
 .crop-expand{position:absolute;z-index:2;top:0;right:0;width:100%;height:120px;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.42),rgba(0,0,0,.16) 38%,transparent);color:rgba(255,255,255,.65)}
-.crop-edge-gradient{position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.42),rgba(0,0,0,.16) 46px,transparent 120px),linear-gradient(to right,rgba(0,0,0,.32),rgba(0,0,0,.12) 32px,transparent 100px),linear-gradient(to left,rgba(0,0,0,.32),rgba(0,0,0,.12) 32px,transparent 100px)}
+.crop-bottom-gradient{position:absolute;z-index:1;right:0;bottom:0;width:100%;height:120px;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.42),rgba(0,0,0,.16) 38%,transparent)}
 .crop-expand svg{position:absolute;top:14px;right:14px;width:20px;height:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
 .image-button:hover .crop-expand,.image-button:focus-visible .crop-expand{color:rgba(255,255,255,.82)}
 body>main{padding-top:1px}
