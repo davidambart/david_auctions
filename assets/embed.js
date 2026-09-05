@@ -66,8 +66,8 @@
     .image-button.is-loading .crop-expand,.image-button.is-loading .crop-bottom-gradient{visibility:hidden}
     .image-button:disabled{cursor:default;color:var(--muted);font:inherit;border:1px solid var(--line)}
     .meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
-    .artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:0}
-    .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkAppear .68s ease both}
+    .artwork.is-reveal-pending .image-button:not(.is-loading){opacity:0}
+    .artwork.is-revealed .image-button{animation:artworkAppear .68s ease both}
     @keyframes artworkAppear{from{opacity:0}to{opacity:1}}
     .meta>div,.meta dl{min-width:0}
     .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0;overflow-wrap:normal;word-break:normal}
@@ -126,7 +126,7 @@
       .meta dt{font-size:8px;line-height:1.35;padding-top:0;white-space:normal;text-align:left}
       .meta dd{min-width:0;font-size:11px;line-height:1.35;text-align:right;overflow-wrap:anywhere}
     }
-    @media(prefers-reduced-motion:reduce){.image-button img,.image-button>.card-loader{transition:none}.viewer-frame img,.archive-spinner,.artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:none!important}.artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:1;transform:none}}
+    @media(prefers-reduced-motion:reduce){.image-button img,.image-button>.card-loader{transition:none}.viewer-frame img,.archive-spinner,.artwork.is-revealed .image-button{animation:none!important}.artwork.is-reveal-pending .image-button:not(.is-loading){opacity:1;transform:none}}
   `;
 
   function parseCSV(text) {
