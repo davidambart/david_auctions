@@ -56,6 +56,12 @@ function bidValue(value=''){
   }else amount=amount.replace(/[.,]/g,'');
   return Number(amount)||0;
 }
+const bidNumberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+function formatBid(value = '') {
+  if (!/€|\bEUR\b/i.test(value)) return value;
+  return `${bidNumberFormat.format(bidValue(value))}\u00a0€`;
+}
+
 // ECB daily reference rates: US dollars per euro on each USD auction's end date.
 // https://data.ecb.europa.eu/data/datasets/EXR/EXR.D.USD.EUR.SP00.A
 const usdPerEuro={
@@ -92,7 +98,7 @@ function card(w,position){
       <dl>
         <div><dt>Medium</dt><dd>${esc(w.medium)}</dd></div>
         <div><dt>Auction ended</dt><dd><time datetime="${esc(w.auctionEndISO)}">${esc(w.auctionEndDisplay)}</time></dd></div>
-        <div><dt>Winning bid</dt><dd>${esc(w.winningBid)}</dd></div>
+        <div><dt>Winning bid</dt><dd>${esc(formatBid(w.winningBid))}</dd></div>
         ${charity}
       </dl>
     </div>

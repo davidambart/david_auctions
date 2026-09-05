@@ -18,7 +18,7 @@ const context = vm.createContext({
     decode() { return Promise.resolve(); }
   }
 });
-const instrumentedSource = source.replace('  class StarMurmurationLoader {', '  globalThis.audit = {parseCSV, escapeHTML, resultInEuro, baseUrl, galleryImages};\n  class StarMurmurationLoader {');
+const instrumentedSource = source.replace('  class StarMurmurationLoader {', '  globalThis.audit = {parseCSV, escapeHTML, resultInEuro, baseUrl, galleryImages, formatBid};\n  class StarMurmurationLoader {');
 vm.runInContext(instrumentedSource, context);
 const { parseCSV, escapeHTML, resultInEuro } = context.audit;
 const works = parseCSV(readFileSync(new URL('data/auctions.csv', base), 'utf8'));
@@ -43,6 +43,9 @@ for (const bid of ['13000,00 €', '13.000,00 €', '13,000.00 EUR', '13000€']
   assert.equal(resultInEuro({winningBid: bid}), 13000);
 }
 assert.equal(resultInEuro({winningBid: '2601,50 €'}), 2601.5);
+assert.equal(context.audit.formatBid('13000,00 €'), '13,000\u00a0€');
+assert.equal(context.audit.formatBid('2601,50 €'), '2,601.5\u00a0€');
+assert.equal(context.audit.formatBid('$1300 USD'), '$1300 USD');
 assert.ok(works.every(work => work.images.split('|').every(path => !/^assets\/images\/\d+-/.test(path.trim()))));
 assert.equal(escapeHTML('<a title="x">&\''), '&lt;a title=&quot;x&quot;&gt;&amp;&#39;');
 assert.equal(resultInEuro({winningBid: '$1300 USD', auctionEndISO: '2020-06-05'}), 1147.4);

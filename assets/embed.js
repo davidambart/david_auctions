@@ -160,6 +160,12 @@
     return Number(amount) || 0;
   }
 
+  const bidNumberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+  function formatBid(value = '') {
+    if (!/€|\bEUR\b/i.test(value)) return value;
+    return `${bidNumberFormat.format(bidValue(value))}\u00a0€`;
+  }
+
   function resultInEuro(work) {
     const amount = bidValue(work.winningBid);
     if (!/\$|\bUSD\b/i.test(work.winningBid)) return amount;
@@ -619,7 +625,7 @@
           <dl>
             <div><dt>Medium</dt><dd>${escapeHTML(work.medium)}</dd></div>
             <div><dt>Auction ended</dt><dd><time datetime="${escapeHTML(work.auctionEndISO)}">${escapeHTML(work.auctionEndDisplay)}</time></dd></div>
-            <div><dt>Winning bid</dt><dd>${escapeHTML(work.winningBid)}</dd></div>
+            <div><dt>Winning bid</dt><dd>${escapeHTML(formatBid(work.winningBid))}</dd></div>
             ${charity}
           </dl>
         </div>
