@@ -162,9 +162,9 @@
 
   const bidNumberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
   function formatBid(value = '') {
-    const currency = /€|\bEUR\b/i.test(value) ? '€' : /\$|\bUSD\b/i.test(value) ? 'USD' : '';
+    const currency = /€|\bEUR\b/i.test(value) ? '€' : /\$|\bUSD\b/i.test(value) ? '$' : '';
     if (!currency) return value;
-    return `${bidNumberFormat.format(bidValue(value)).replace(/,/g, '\u202f')}\u00a0${currency}`;
+    return `${currency}${bidNumberFormat.format(bidValue(value))}`;
   }
 
   function resultInEuro(work) {
