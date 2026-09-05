@@ -1,4 +1,6 @@
 (() => {
+  // Squarespace can evaluate the embed more than once during navigation.
+  if (customElements.get('auction-archive')) return;
   const scriptUrl = document.currentScript?.src || 'https://davidambart.github.io/david_auctions/assets/embed.js';
   const baseUrl = new URL('../', scriptUrl);
   if (!document.querySelector('link[data-auction-archive-fonts]')) {
@@ -87,6 +89,8 @@
     .gallery-nav::before{content:"";width:16px;height:20px;transform:translate(2px,7px);background:currentColor;-webkit-mask:center/contain no-repeat;mask:center/contain no-repeat}
     .previous::before{transform:translate(0,7px);-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M12 2 4 10l8 8' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M12 2 4 10l8 8' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E")}.next::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M4 2l8 8-8 8' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M4 2l8 8-8 8' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E")}
     .gallery-nav:hover{background:rgba(0,0,0,.42)}
+    button:focus-visible,input:focus-visible,select:focus-visible,.close:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+    .gallery-error{position:absolute;inset:0;display:grid;place-items:center;padding:70px;text-align:center;color:#fff}
     .previous{left:14px}.next{right:14px}
     .slide-left{animation:slideLeft .24s ease}.slide-right{animation:slideRight .24s ease}
     @keyframes slideLeft{from{opacity:.35;transform:translateX(18px)}to{opacity:1;transform:none}}
@@ -99,7 +103,7 @@
       .controls .select-controls{grid-area:selects;width:100%;gap:12px}
       .controls>button{grid-area:reset;align-self:end;margin:0 0 1px;padding:6px 2px 7px}
       .controls label{gap:3px;flex:1;font-size:9px;letter-spacing:.1em}
-      .controls input,.controls select{width:100%;min-width:0;min-height:32px;padding:4px 1px;font-size:13px;line-height:1.2}
+      .controls input,.controls select{width:100%;min-width:0;min-height:32px;padding:4px 1px;font-size:16px;line-height:1.2}
       .select-controls label{flex:1;min-width:0}
       h1{font-size:70px}.meta{grid-template-columns:minmax(0,50%) minmax(0,50%);gap:0;padding-top:20px}.meta dl{width:100%;max-width:none;min-width:0}.meta dl>div{display:grid;grid-template-columns:minmax(0,35%) minmax(0,1fr);align-items:start;gap:clamp(4px,1cqw,8px);padding:2px 0 7px}.meta dt{font-size:10px;line-height:1.35;padding-top:2px;white-space:nowrap;text-align:left}.meta dd{min-width:0;font-size:13px;line-height:1.35;text-align:right;overflow-wrap:anywhere}.meta h2{font-size:38px}.year{font-size:17px}
       :host(.da-theme-dark) .image-button>.card-loader.is-ready{width:clamp(104px,31vw,136px);height:clamp(104px,31vw,136px)}
@@ -356,13 +360,14 @@
       super();
       this.attachShadow({mode: 'open'});
       this.works = [];
+      this.renderedWorks = null;
       this.gallery = [];
       this.galleryIndex = 0;
       this.touchStartX = 0;
       this.touchStartY = 0;
       this.previousBodyOverflow = '';
       this.galleryImageCache = new Map();
-      this.galleryPreloadObserver = null;
+      this.loadController = null;
       this.imagePriorityObserver = null;
       this.cardRevealObserver = null;
       this.galleryRequest = 0;
@@ -375,8 +380,7 @@
       this.lastScrollTime = performance.now();
       this.fastScrollUntil = 0;
       this.priorityActivationFrame = 0;
-      const squarespaceBlock = this.closest('#block-yui_3_17_2_1_1783829756600_1786');
-      this.pageRevealHeld = Boolean(squarespaceBlock && !squarespaceBlock.classList.contains('da-auction-page-revealed'));
+      this.pageRevealHeld = false;
       this.onWindowScroll = () => this.recordScrollVelocity();
       this.onPageReveal = () => {
         this.pageRevealHeld = false;
@@ -385,7 +389,11 @@
     }
 
     connectedCallback() {
-      if (this.shadowRoot.children.length) return;
+      const squarespaceBlock = this.closest('#block-yui_3_17_2_1_1783829756600_1786');
+      this.pageRevealHeld = Boolean(squarespaceBlock && !squarespaceBlock.classList.contains('da-auction-page-revealed'));
+      this.lastScrollY = window.scrollY;
+      this.lastScrollTime = performance.now();
+      this.priorityActivationFrame = 0;
       this.renderShell();
       this.starLoader = new StarMurmurationLoader(this);
       this.starLoader.add(this.shadowRoot.querySelector('.archive-loader'), 148);
@@ -396,7 +404,9 @@
     }
 
     disconnectedCallback() {
-      this.galleryPreloadObserver?.disconnect();
+      this.loadController?.abort();
+      this.closeGallery();
+      this.cardRevealRun++;
       this.imagePriorityObserver?.disconnect();
       this.cardRevealObserver?.disconnect();
       this.clearCardTasks();
@@ -433,12 +443,12 @@
           <p class="empty no-results" hidden>No works match those filters.</p>
           <p class="empty load-error" hidden>Archive data could not be loaded.</p>
         </main>
-        <dialog class="viewer">
+        <dialog class="viewer" aria-labelledby="gallery-title">
           <button aria-label="Close gallery" class="close" type="button">×</button>
           <button aria-label="Previous image" class="gallery-nav previous" type="button">‹</button>
           <figure class="viewer-content">
-            <div class="viewer-frame"><canvas class="star-loader gallery-loader" aria-hidden="true"></canvas><img alt=""></div>
-            <figcaption class="viewer-caption"><p></p><span class="image-counter"></span></figcaption>
+            <div class="viewer-frame"><canvas class="star-loader gallery-loader" aria-hidden="true"></canvas><img alt=""><p class="gallery-error" role="status" hidden>Image could not be loaded. Please try another image or reopen the gallery.</p></div>
+            <figcaption class="viewer-caption"><p id="gallery-title"></p><span class="image-counter" aria-live="polite"></span></figcaption>
           </figure>
           <button aria-label="Next image" class="gallery-nav next" type="button">›</button>
         </dialog>`;
@@ -488,10 +498,12 @@
         const dy = touch.clientY - this.touchStartY;
         if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.25) this.moveGallery(dx < 0 ? 1 : -1);
       }, {passive: true});
-      this.addEventListener('keydown', event => {
+      viewer.addEventListener('keydown', event => {
         if (!viewer.open) return;
-        if (event.key === 'ArrowLeft') this.moveGallery(-1);
-        if (event.key === 'ArrowRight') this.moveGallery(1);
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          event.preventDefault();
+          this.moveGallery(event.key === 'ArrowLeft' ? -1 : 1);
+        }
       });
     }
 
@@ -505,10 +517,15 @@
     }
 
     async load() {
+      this.loadController?.abort();
+      const controller = new AbortController();
+      this.loadController = controller;
       try {
-        const response = await fetch(new URL('data/auctions.csv', baseUrl));
+        const response = await fetch(new URL('data/auctions.csv', baseUrl), {signal: controller.signal});
         if (!response.ok) throw new Error(response.status);
-        this.works = parseCSV(await response.text()).map(work => ({
+        const csv = await response.text();
+        if (controller.signal.aborted || !this.isConnected) return;
+        this.works = parseCSV(csv).map(work => ({
           ...work,
           resultEUR: resultInEuro(work),
           images: work.images.split('|').map(path => path.trim()).filter(Boolean).map(path => new URL(path, baseUrl).href)
@@ -517,10 +534,11 @@
         const yearSelect = this.shadowRoot.querySelector('.year-select');
         years.forEach(year => yearSelect.insertAdjacentHTML('beforeend', `<option value="${escapeHTML(year)}">${escapeHTML(year)}</option>`));
         const numericYears = this.works.map(work => Number(work.year)).filter(Number.isFinite);
-        this.shadowRoot.querySelector('.count').textContent = `${this.works.length} works · ${Math.min(...numericYears)}–${Math.max(...numericYears)}`;
+        this.archiveSummary = numericYears.length ? `${this.works.length} works · ${Math.min(...numericYears)}–${Math.max(...numericYears)}` : '0 works';
         this.setLoaded();
         this.updateCards();
       } catch (error) {
+        if (controller.signal.aborted || !this.isConnected) return;
         console.error('Auction archive could not load:', error);
         const root = this.shadowRoot;
         root.querySelector('.archive-loading').hidden = true;
@@ -545,7 +563,11 @@
         const matchesQuery = !query || work.title.toLowerCase().includes(query) || String(work.year).includes(query);
         return matchesQuery && (year === 'all' || String(work.year) === year);
       }).sort(compare);
-      this.galleryPreloadObserver?.disconnect();
+      root.querySelector('.no-results').hidden = visible.length !== 0;
+      root.querySelector('.count').textContent = query || year !== 'all' ? `${visible.length} of ${this.works.length} works` : this.archiveSummary;
+      // Preserve images and ongoing reveals when typing leaves the results unchanged.
+      if (this.renderedWorks?.length === visible.length && visible.every((work, index) => work === this.renderedWorks[index])) return;
+      this.renderedWorks = visible;
       this.imagePriorityObserver?.disconnect();
       this.cardRevealObserver?.disconnect();
       this.clearCardTasks();
@@ -557,11 +579,9 @@
       this.nextCardRevealAt = performance.now() + 60;
       this.cardLoadStates = new WeakMap();
       archive.innerHTML = visible.map((work, position) => this.cardHTML(work, position)).join('');
-      root.querySelector('.no-results').hidden = visible.length !== 0;
       this.bindCardLoaders();
       this.observeCardReveals();
       this.preloadApproachingCardImages();
-      this.preloadVisibleGalleries();
     }
 
     cardHTML(work, position) {
@@ -569,7 +589,7 @@
       const charity = work.charity ? `<div class="charity-row"><dt>Charity</dt><dd>${escapeHTML(work.charity)}</dd></div>` : '';
       const imageTitle = `${work.title}, ${work.year} — David Ambarzumjan`;
       const image = work.images[0];
-      const priority = position < 9;
+      const priority = position < 3;
       return `<article class="artwork is-reveal-pending" data-reveal-position="${position}">
         <button class="image-button is-loading" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
           <canvas class="star-loader card-loader" aria-hidden="true"></canvas>
@@ -726,7 +746,10 @@
         this.priorityActivationFrame = 0;
         const leadDistance = Math.min(5200, Math.max(2500, Math.round(velocity * 1900)));
         const viewportHeight = window.innerHeight;
-        const candidates = [...this.shadowRoot.querySelectorAll('.image-button')].map(button => ({button, rect: button.getBoundingClientRect()})).filter(({rect}) => direction > 0
+        const candidates = [...this.shadowRoot.querySelectorAll('.image-button')].filter(button => {
+          const state = this.cardLoadStates.get(button);
+          return state && !state.ready;
+        }).map(button => ({button, rect: button.getBoundingClientRect()})).filter(({rect}) => direction > 0
           ? rect.bottom > -100 && rect.top < viewportHeight + leadDistance
           : rect.top < viewportHeight + 100 && rect.bottom > -leadDistance
         ).sort((a, b) => {
@@ -743,7 +766,7 @@
     }
 
     preloadApproachingCardImages() {
-      const activate = button => this.promoteCardImage(button, true);
+      const activate = button => this.promoteCardImage(button);
       const buttons = [...this.shadowRoot.querySelectorAll('.image-button')];
       if (!('IntersectionObserver' in window)) {
         buttons.forEach(activate);
@@ -755,7 +778,7 @@
           activate(entry.target);
           observer.unobserve(entry.target);
         });
-      }, {rootMargin: '1800px 0px'});
+      }, {rootMargin: '900px 0px'});
       this.imagePriorityObserver = observer;
       buttons.forEach(button => observer.observe(button));
     }
@@ -796,7 +819,10 @@
           const decoded = typeof image.decode === 'function' ? image.decode().catch(() => {}) : Promise.resolve();
           decoded.then(() => resolve(true));
         };
-        image.onerror = () => resolve(false);
+        image.onerror = () => {
+          this.galleryImageCache.delete(url);
+          resolve(false);
+        };
         image.src = url;
       });
       this.galleryImageCache.set(url, preload);
@@ -806,21 +832,6 @@
     preloadWorkGallery(workIndex) {
       const work = this.works[workIndex];
       return work ? Promise.all(work.images.map(image => this.preloadGalleryImage(image))) : Promise.resolve([]);
-    }
-
-    preloadVisibleGalleries() {
-      if (!('IntersectionObserver' in window)) return;
-      const observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
-          this.preloadWorkGallery(Number(entry.target.dataset.index));
-          observer.unobserve(entry.target);
-        });
-      }, {rootMargin: '600px 0px'});
-      this.galleryPreloadObserver = observer;
-      this.shadowRoot.querySelectorAll('.image-button').forEach(button => {
-        observer.observe(button);
-      });
     }
 
     openGallery(workIndex) {
@@ -853,6 +864,7 @@
       root.querySelector('.next').hidden = this.gallery.length < 2;
       image.classList.remove('slide-left', 'slide-right');
       frame.classList.add('is-loading');
+      root.querySelector('.gallery-error').hidden = true;
       frame.classList.toggle('has-star-loader', this.starLoader.add(frame.querySelector('.gallery-loader'), 148));
       image.hidden = true;
       image.removeAttribute('src');
@@ -860,6 +872,7 @@
       if (request !== this.galleryRequest) return;
       if (!loaded) {
         frame.classList.remove('is-loading');
+        root.querySelector('.gallery-error').hidden = false;
         this.starLoader.remove(frame.querySelector('.gallery-loader'));
         return;
       }
@@ -881,14 +894,16 @@
     closeGallery() {
       const viewer = this.shadowRoot.querySelector('.viewer');
       this.galleryRequest++;
-      if (viewer.open) viewer.close();
+      if (viewer.open) {
+        viewer.close();
+        document.body.style.overflow = this.previousBodyOverflow;
+      }
       const frame = this.shadowRoot.querySelector('.viewer-frame');
       frame.classList.remove('is-loading');
       this.starLoader.remove(frame.querySelector('.gallery-loader'));
       const image = frame.querySelector('img');
       image.hidden = true;
       image.removeAttribute('src');
-      document.body.style.overflow = this.previousBodyOverflow;
     }
   }
 

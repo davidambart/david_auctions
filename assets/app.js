@@ -5,6 +5,8 @@ const sortSelect=document.querySelector('#sort');
 const empty=document.querySelector('#empty');
 const loadError=document.querySelector('#load-error');
 let data=[];
+let lastSort='latest';
+let archiveSummary='';
 let reportEmbedHeight=()=>{};
 
 function setupEmbedHeight(){
@@ -68,7 +70,7 @@ function auctionResultEuro(w){
 }
 function card(w,position){
   const charity=w.charity?`<div class="charity-row"><dt>Charity</dt><dd>${esc(w.charity)}</dd></div>`:'';
-  const imgs=JSON.stringify(w.images).replace(/'/g,'&#39;');
+  const imgs=esc(JSON.stringify(w.images));
   const imageTitle=`${w.title}, ${w.year} — David Ambarzumjan`;
   const image=w.images[0];
   const priority=position<3;
@@ -94,7 +96,7 @@ function setupViewer(){
   function move(step){if(gallery.length<2)return;galleryIndex=(galleryIndex+step+gallery.length)%gallery.length;renderImage(step);}
   document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>{if(window.self!==window.top)return;try{gallery=JSON.parse(b.dataset.images||'[]'); gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=b.dataset.title;renderImage();viewer.showModal();document.body.classList.add('viewer-open');}));
   prev.addEventListener('click',e=>{e.stopPropagation();move(-1)});next.addEventListener('click',e=>{e.stopPropagation();move(1)});
-  function closeViewer(){if(viewer.open)viewer.close();document.body.classList.remove('viewer-open');vimg.src='';}
+  function closeViewer(){if(viewer.open)viewer.close();document.body.classList.remove('viewer-open');vimg.removeAttribute('src');}
   viewer.querySelector('.close').addEventListener('click',closeViewer);viewer.addEventListener('click',e=>{if(e.target===viewer)closeViewer()});
   viewer.addEventListener('cancel',e=>{e.preventDefault();closeViewer()});
   document.addEventListener('keydown',e=>{if(!viewer.open)return;if(e.key==='Escape')closeViewer();if(e.key==='ArrowLeft')move(-1);if(e.key==='ArrowRight')move(1)});
@@ -110,9 +112,10 @@ earliest:(a,b)=>a.dataset.auctionDate.localeCompare(b.dataset.auctionDate)||Numb
 high:(a,b)=>Number(b.dataset.resultEur)-Number(a.dataset.resultEur)||Number(a.dataset.id)-Number(b.dataset.id),
 low:(a,b)=>Number(a.dataset.resultEur)-Number(b.dataset.resultEur)||Number(a.dataset.id)-Number(b.dataset.id)
 }[sortSelect.value||'latest'];
-cards.sort(cmp).forEach(c=>archive.appendChild(c));
+if(sortSelect.value!==lastSort){cards.sort(cmp).forEach(c=>archive.appendChild(c));lastSort=sortSelect.value;}
 cards.forEach(w=>{const matchesSearch=!q||w.dataset.title.includes(q)||w.dataset.year.includes(q);w.hidden=!matchesSearch||(y!=='all'&&w.dataset.year!==y);});
 const vis=cards.filter(c=>!c.hidden);
+document.querySelector('#count').textContent=q||y!=='all'?`${vis.length} of ${data.length} works`:archiveSummary;
 empty.hidden=vis.length!==0;
 reportEmbedHeight();
 }
@@ -122,7 +125,7 @@ async function init(){
     data=parseCSV(await response.text()).map(w=>({...w,images:w.images.split('|').map(x=>x.trim()).filter(Boolean)}));
     data.sort((a,b)=>String(b.auctionEndISO).localeCompare(String(a.auctionEndISO))||Number(a.id)-Number(b.id));
     const years=[...new Set(data.map(w=>String(w.year)))].sort((a,b)=>Number(b)-Number(a)); years.forEach(y=>yearSelect.insertAdjacentHTML('beforeend',`<option value="${esc(y)}">${esc(y)}</option>`));
-    const nums=data.map(w=>Number(w.year)).filter(Number.isFinite); document.querySelector('#count').textContent=`${data.length} works · ${Math.min(...nums)}–${Math.max(...nums)}`;
+    const nums=data.map(w=>Number(w.year)).filter(Number.isFinite); archiveSummary=nums.length?`${data.length} works · ${Math.min(...nums)}–${Math.max(...nums)}`:'0 works';document.querySelector('#count').textContent=archiveSummary;
     archive.innerHTML=data.map(card).join('');setupViewer();reportEmbedHeight();
     search.addEventListener('input',filter);yearSelect.addEventListener('change',filter);sortSelect.addEventListener('change',filter);document.querySelector('#reset').addEventListener('click',()=>{search.value='';yearSelect.value='all';sortSelect.value='latest';filter()});
   }catch(err){console.error(err);loadError.hidden=false;}

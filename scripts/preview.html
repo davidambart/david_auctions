@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Auction archive — local preview</title>
+<style>
+  body { margin: 24px; }
+  nav { display: flex; gap: 16px; margin-bottom: 32px; }
+</style>
+<nav aria-label="Preview controls">
+  <button id="reconnect" type="button">Reconnect archive</button>
+  <label><input id="dark" type="checkbox"> Dark loader preview</label>
+</nav>
+<auction-archive></auction-archive>
+<script src="../assets/embed.js"></script>
+<script>
+  const archive = document.querySelector('auction-archive');
+  document.querySelector('#reconnect').addEventListener('click', () => {
+    archive.remove();
+    document.body.appendChild(archive);
+  });
+  document.querySelector('#dark').addEventListener('change', event => {
+    archive.classList.toggle('da-theme-dark', event.target.checked);
+  });
+</script>
+</html>

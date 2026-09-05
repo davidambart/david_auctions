@@ -5,7 +5,6 @@
 <meta content="noindex, nofollow" name="robots"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<meta content="index,follow" name="robots"/>
 <title>Auction Archive — David Ambarzumjan</title>
 <meta content="A chronological archive of David Ambarzumjan's miniature original painting auctions and final results." name="description"/>
 <link href="assets/styles.css" rel="stylesheet"/>
@@ -31,12 +30,12 @@
 <p class="empty" hidden="" id="empty">No works match those filters.</p>
 <p class="empty" hidden="" id="load-error">Archive data could not be loaded.</p>
 </main>
-<dialog class="viewer" id="viewer">
+<dialog class="viewer" id="viewer" aria-labelledby="gallery-title">
 <button aria-label="Close gallery" class="close" type="button">×</button>
 <button aria-label="Previous image" class="gallery-nav previous" type="button">‹</button>
 <figure class="viewer-content">
 <div class="viewer-frame"><img alt=""/></div>
-<figcaption class="viewer-caption"><p></p><span class="image-counter"></span></figcaption>
+<figcaption class="viewer-caption"><p id="gallery-title"></p><span class="image-counter" aria-live="polite"></span></figcaption>
 </figure>
 <button aria-label="Next image" class="gallery-nav next" type="button">›</button>
 </dialog>
