@@ -18,7 +18,7 @@ const context = vm.createContext({
     decode() { return Promise.resolve(); }
   }
 });
-const instrumentedSource = source.replace('  class StarMurmurationLoader {', '  globalThis.audit = {parseCSV, escapeHTML, resultInEuro, baseUrl, galleryImages, formatBid};\n  class StarMurmurationLoader {');
+const instrumentedSource = source.replace('  class StarMurmurationLoader {', '  globalThis.audit = {parseCSV, escapeHTML, resultInEuro, baseUrl, galleryImages, formatBid, isArmenian, arianAmuSerifUrl};\n  class StarMurmurationLoader {');
 vm.runInContext(instrumentedSource, context);
 const { parseCSV, escapeHTML, resultInEuro } = context.audit;
 const works = parseCSV(readFileSync(new URL('data/auctions.csv', base), 'utf8'));
@@ -49,6 +49,10 @@ assert.equal(context.audit.formatBid('$1300 USD'), '$1,300');
 assert.ok(works.every(work => work.images.split('|').every(path => !/^assets\/images\/\d+-/.test(path.trim()))));
 assert.equal(escapeHTML('<a title="x">&\''), '&lt;a title=&quot;x&quot;&gt;&amp;&#39;');
 assert.equal(resultInEuro({winningBid: '$1300 USD', auctionEndISO: '2020-06-05'}), 1147.4);
+assert.ok(existsSync(fileURLToPath(new URL('assets/fonts/ArianAMUSerif/ArianAMUSerif.ttf', base))));
+assert.ok(existsSync(fileURLToPath(new URL('assets/fonts/ArianAMUSerif/License.txt', base))));
+assert.equal(context.audit.isArmenian('Սևան'), true);
+assert.equal(context.audit.isArmenian('Sevan'), false);
 
 // An unsuccessful request must be retried; successful/concurrent requests are reused.
 const archive = Object.create(Archive.prototype);
@@ -92,6 +96,9 @@ assert.deepEqual(Array.from(context.audit.galleryImages(portraitWork)), portrait
 const legacyWork = {...portraitWork, thumbnail: ''};
 assert.ok(archive.cardHTML(legacyWork, 0).includes(`src="${legacyWork.images[0]}"`));
 assert.equal(context.audit.galleryImages(legacyWork)[0], legacyWork.images[1]);
+const armenianWork = {...portraitWork, title: 'Սևան'};
+archive.works = [armenianWork];
+assert.ok(archive.cardHTML(armenianWork, 0).includes('<h2 lang="hy">Սևան</h2>'));
 
 // Both frontends must accept the same spreadsheet export and price formats.
 const appSource = readFileSync(new URL('assets/app.js', base), 'utf8');

@@ -3,6 +3,7 @@
   if (customElements.get('auction-archive')) return;
   const scriptUrl = document.currentScript?.src || 'https://davidambart.github.io/david_auctions/assets/embed.js';
   const baseUrl = new URL(document.currentScript?.dataset.baseUrl || '../', scriptUrl);
+  const arianAmuSerifUrl = new URL('assets/fonts/ArianAMUSerif/ArianAMUSerif.ttf', baseUrl).href;
   if (!document.querySelector('link[data-auction-archive-fonts]')) {
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
@@ -25,6 +26,7 @@
   };
 
   const styles = `
+    @font-face{font-family:"Arian AMU Serif";font-style:normal;font-weight:400;font-display:swap;src:url("${arianAmuSerifUrl}") format("truetype")}
     @font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:400;font-display:swap;src:url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2") format("woff2")}
     @font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:500;font-display:swap;src:url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2") format("woff2")}
     :host{--ink:#111;--muted:#777;--line:#ddd;--paper:#fff;--pad:clamp(20px,4cqw,64px);display:block;width:100%;container-type:inline-size;color:var(--ink);background:var(--paper);font:14px Inter,Arial,sans-serif}
@@ -126,6 +128,7 @@
       .meta dt{font-size:8px;line-height:1.35;padding-top:0;white-space:normal;text-align:left}
       .meta dd{min-width:0;font-size:11px;line-height:1.35;text-align:right;overflow-wrap:anywhere}
     }
+    .meta h2[lang="hy"],.viewer-caption p[lang="hy"]{font-family:"Arian AMU Serif","Cormorant Garamond",Georgia,serif;font-weight:400}
     @media(prefers-reduced-motion:reduce){.image-button img,.image-button>.card-loader{transition:none}.viewer-frame img,.archive-spinner,.artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:none!important}.artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:1;transform:none}}
   `;
 
@@ -154,6 +157,10 @@
 
   function escapeHTML(value = '') {
     return String(value).replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  }
+
+  function isArmenian(value = '') {
+    return /[\u0530-\u058F]/.test(value);
   }
 
   function bidValue(value = '') {
@@ -629,7 +636,7 @@
           ${work.thumbnail && hasGallery ? '<span class="crop-expand" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3h8v8M3 13v8h8"/></svg></span>' : ''}
         </button>
         <div class="meta">
-          <div><h2>${escapeHTML(work.title)}</h2><p class="year">${escapeHTML(work.year)}</p></div>
+          <div><h2${isArmenian(work.title) ? ' lang="hy"' : ''}>${escapeHTML(work.title)}</h2><p class="year">${escapeHTML(work.year)}</p></div>
           <dl>
             <div><dt>Medium</dt><dd>${escapeHTML(work.medium)}</dd></div>
             <div><dt>Auction ended</dt><dd><time datetime="${escapeHTML(work.auctionEndISO)}">${escapeHTML(work.auctionEndDisplay)}</time></dd></div>
@@ -877,7 +884,10 @@
       if (!work || !work.images.length) return;
       this.gallery = galleryImages(work);
       this.galleryIndex = 0;
-      this.shadowRoot.querySelector('.viewer-caption p').textContent = work.title;
+      const viewerTitle = this.shadowRoot.querySelector('.viewer-caption p');
+      viewerTitle.textContent = work.title;
+      if (isArmenian(work.title)) viewerTitle.setAttribute('lang', 'hy');
+      else viewerTitle.removeAttribute('lang');
       this.previousBodyOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       this.shadowRoot.querySelector('.viewer').showModal();

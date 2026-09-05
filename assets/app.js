@@ -48,6 +48,7 @@ function parseCSV(text){
   return rows.filter(r=>r.some(v=>v!=='')).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
 }
 function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function isArmenian(value=''){return /[\u0530-\u058F]/.test(value);}
 function bidValue(value=''){
   let amount=String(value).replace(/[^0-9.,]/g,'');
   if(/[.,]\d{1,2}$/.test(amount)){
@@ -97,7 +98,7 @@ function card(w,position){
       ${w.thumbnail&&hasGallery?'<span class="crop-expand" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3h8v8M3 13v8h8"/></svg></span>':''}
     </button>
     <div class="meta">
-      <div><h2>${esc(w.title)}</h2><p class="year">${esc(w.year)}</p></div>
+      <div><h2${isArmenian(w.title)?' lang="hy"':''}>${esc(w.title)}</h2><p class="year">${esc(w.year)}</p></div>
       <dl>
         <div><dt>Medium</dt><dd>${esc(w.medium)}</dd></div>
         <div><dt>Auction ended</dt><dd><time datetime="${esc(w.auctionEndISO)}">${esc(w.auctionEndDisplay)}</time></dd></div>
@@ -112,7 +113,7 @@ function setupViewer(){
   let gallery=[],galleryIndex=0,touchStartX=0,touchStartY=0;
   function renderImage(direction=0){if(!gallery.length)return;vimg.classList.remove('slide-left','slide-right');void vimg.offsetWidth;vimg.style.objectFit='contain';vimg.src=gallery[galleryIndex];vimg.alt=`${vtitle.textContent} by David Ambarzumjan, image ${galleryIndex+1} of ${gallery.length}`;vimg.title=`${vtitle.textContent} — David Ambarzumjan`;counter.textContent=`${galleryIndex+1} / ${gallery.length}`;prev.hidden=gallery.length<2;next.hidden=gallery.length<2;if(direction)vimg.classList.add(direction>0?'slide-left':'slide-right');}
   function move(step){if(gallery.length<2)return;galleryIndex=(galleryIndex+step+gallery.length)%gallery.length;renderImage(step);}
-  document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>{if(window.self!==window.top)return;try{gallery=JSON.parse(b.dataset.images||'[]'); gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=b.dataset.title;renderImage();viewer.showModal();document.body.classList.add('viewer-open');}));
+  document.querySelectorAll('.image-button').forEach(b=>b.addEventListener('click',()=>{if(window.self!==window.top)return;try{gallery=JSON.parse(b.dataset.images||'[]'); gallery=[...new Set(gallery)]}catch{gallery=[]}galleryIndex=0;vtitle.textContent=b.dataset.title;if(isArmenian(b.dataset.title))vtitle.setAttribute('lang','hy');else vtitle.removeAttribute('lang');renderImage();viewer.showModal();document.body.classList.add('viewer-open');}));
   prev.addEventListener('click',e=>{e.stopPropagation();move(-1)});next.addEventListener('click',e=>{e.stopPropagation();move(1)});
   function closeViewer(){if(viewer.open)viewer.close();document.body.classList.remove('viewer-open');vimg.removeAttribute('src');}
   viewer.querySelector('.close').addEventListener('click',closeViewer);viewer.addEventListener('click',e=>{if(e.target===viewer)closeViewer()});
