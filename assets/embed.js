@@ -2,7 +2,7 @@
   // Squarespace can evaluate the embed more than once during navigation.
   if (customElements.get('auction-archive')) return;
   const scriptUrl = document.currentScript?.src || 'https://davidambart.github.io/david_auctions/assets/embed.js';
-  const baseUrl = new URL('../', scriptUrl);
+  const baseUrl = new URL(document.currentScript?.dataset.baseUrl || '../', scriptUrl);
   if (!document.querySelector('link[data-auction-archive-fonts]')) {
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
@@ -59,6 +59,7 @@
     .image-button.is-loading>img{opacity:0}
     .image-button img{display:block;width:100%;height:100%;object-fit:contain;transition:opacity .52s cubic-bezier(.22,1,.36,1),transform .6s ease}
     .image-button:hover img{transform:scale(1.015)}
+    .image-button:disabled{cursor:default;color:var(--muted);font:inherit;border:1px solid var(--line)}
     .meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;border-top:1px solid var(--line);margin-top:18px}
     .artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:0}
     .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkAppear .68s ease both}
@@ -127,6 +128,7 @@
     const rows = [];
     let row = [], field = '', quoted = false;
     text = text.replace(/^\uFEFF/, '');
+    const delimiter = text.split(/\r?\n/, 1)[0].includes(';') ? ';' : ',';
     for (let i = 0; i < text.length; i++) {
       const char = text[i], next = text[i + 1];
       if (quoted) {
@@ -134,7 +136,7 @@
         else if (char === '"') quoted = false;
         else field += char;
       } else if (char === '"') quoted = true;
-      else if (char === ',') { row.push(field); field = ''; }
+      else if (char === delimiter) { row.push(field); field = ''; }
       else if (char === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
       else if (char !== '\r') field += char;
     }
@@ -150,7 +152,12 @@
   }
 
   function bidValue(value = '') {
-    return Number(String(value).replace(/[^0-9]/g, '')) || 0;
+    let amount = String(value).replace(/[^0-9.,]/g, '');
+    if (/[.,]\d{1,2}$/.test(amount)) {
+      const separator = Math.max(amount.lastIndexOf(','), amount.lastIndexOf('.'));
+      amount = amount.slice(0, separator).replace(/[.,]/g, '') + '.' + amount.slice(separator + 1);
+    } else amount = amount.replace(/[.,]/g, '');
+    return Number(amount) || 0;
   }
 
   function resultInEuro(work) {
@@ -591,9 +598,9 @@
       const image = work.images[0];
       const priority = position < 3;
       return `<article class="artwork is-reveal-pending" data-reveal-position="${position}">
-        <button class="image-button is-loading" type="button" data-index="${index}" aria-label="View ${escapeHTML(work.title)} image gallery">
+        <button class="image-button is-loading" type="button" data-index="${index}" aria-label="${image ? `View ${escapeHTML(work.title)} image gallery` : `Image not yet available for ${escapeHTML(work.title)}`}" ${image ? '' : 'disabled'}>
           <canvas class="star-loader card-loader" aria-hidden="true"></canvas>
-          <img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${position < 3 ? 'high' : 'auto'}" decoding="async">
+          ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(imageTitle)}" title="${escapeHTML(imageTitle)}" width="800" height="800" loading="${priority ? 'eager' : 'lazy'}" fetchpriority="${position < 3 ? 'high' : 'auto'}" decoding="async">` : '<span>Image not yet available</span>'}
         </button>
         <div class="meta">
           <div><h2>${escapeHTML(work.title)}</h2><p class="year">${escapeHTML(work.year)}</p></div>
@@ -611,6 +618,11 @@
       const revealRun = this.cardRevealRun;
       this.shadowRoot.querySelectorAll('.image-button.is-loading').forEach(button => {
         const image = button.querySelector('img');
+        if (!image) {
+          button.classList.remove('is-loading');
+          button.closest('.artwork').classList.remove('is-reveal-pending');
+          return;
+        }
         const loader = button.querySelector('.card-loader');
         const state = {
           button,

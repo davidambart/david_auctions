@@ -29,6 +29,7 @@ function setupEmbedHeight(){
 function parseCSV(text){
   const rows=[]; let row=[],field='',quoted=false;
   text=text.replace(/^\uFEFF/,'');
+  const delimiter=text.split(/\r?\n/,1)[0].includes(';')?';':',';
   for(let i=0;i<text.length;i++){
     const c=text[i],n=text[i+1];
     if(quoted){
@@ -37,7 +38,7 @@ function parseCSV(text){
       else field+=c;
     }else{
       if(c==='"') quoted=true;
-      else if(c===','){row.push(field);field='';}
+      else if(c===delimiter){row.push(field);field='';}
       else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}
       else if(c!=='\r') field+=c;
     }
@@ -47,7 +48,14 @@ function parseCSV(text){
   return rows.filter(r=>r.some(v=>v!=='')).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
 }
 function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-function bidValue(value=''){return Number(String(value).replace(/[^0-9]/g,''))||0;}
+function bidValue(value=''){
+  let amount=String(value).replace(/[^0-9.,]/g,'');
+  if(/[.,]\d{1,2}$/.test(amount)){
+    const separator=Math.max(amount.lastIndexOf(','),amount.lastIndexOf('.'));
+    amount=amount.slice(0,separator).replace(/[.,]/g,'')+'.'+amount.slice(separator+1);
+  }else amount=amount.replace(/[.,]/g,'');
+  return Number(amount)||0;
+}
 // ECB daily reference rates: US dollars per euro on each USD auction's end date.
 // https://data.ecb.europa.eu/data/datasets/EXR/EXR.D.USD.EUR.SP00.A
 const usdPerEuro={
@@ -75,8 +83,8 @@ function card(w,position){
   const image=w.images[0];
   const priority=position<3;
   return `<article class="artwork" data-title="${esc(w.title.toLowerCase())}" data-year="${esc(w.year)}" data-auction-date="${esc(w.auctionEndISO)}" data-result-eur="${auctionResultEuro(w)}" data-id="${esc(w.id)}">
-    <button class="image-button" type="button" aria-label="View ${esc(w.title)} image gallery" data-images='${imgs}' data-title="${esc(w.title)}">
-      <img src="${esc(image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" width="800" height="800" loading="${priority?'eager':'lazy'}" fetchpriority="${priority?'high':'low'}" decoding="async">
+    <button class="image-button" type="button" aria-label="${image?`View ${esc(w.title)} image gallery`:`Image not yet available for ${esc(w.title)}`}" data-images='${imgs}' data-title="${esc(w.title)}" ${image?'':'disabled'}>
+      ${image?`<img src="${esc(image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" width="800" height="800" loading="${priority?'eager':'lazy'}" fetchpriority="${priority?'high':'low'}" decoding="async">`:'<span>Image not yet available</span>'}
     </button>
     <div class="meta">
       <div><h2>${esc(w.title)}</h2><p class="year">${esc(w.year)}</p></div>
