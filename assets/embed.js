@@ -3,13 +3,19 @@
   if (customElements.get('auction-archive')) return;
   const scriptUrl = document.currentScript?.src || 'https://davidambart.github.io/david_auctions/assets/embed.js';
   const baseUrl = new URL(document.currentScript?.dataset.baseUrl || '../', scriptUrl);
-  const gheaMariamUrl = new URL('assets/fonts/GHEAMariam/GHEAMariamReg.otf', baseUrl).href;
+  const gheaMariamUrl = new URL('fonts/GHEAMariam/GHEAMariamReg.otf', scriptUrl).href;
   if (!document.querySelector('link[data-auction-archive-fonts]')) {
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
     fontLink.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500;600&display=swap';
     fontLink.dataset.auctionArchiveFonts = '';
     document.head.appendChild(fontLink);
+  }
+  if (!document.querySelector('style[data-auction-archive-ghea-mariam]')) {
+    const armenianFontStyle = document.createElement('style');
+    armenianFontStyle.dataset.auctionArchiveGheaMariam = '';
+    armenianFontStyle.textContent = `@font-face{font-family:"DA GHEA Mariam";font-style:normal;font-weight:400;font-display:swap;src:url("${gheaMariamUrl}") format("opentype")}`;
+    document.head.appendChild(armenianFontStyle);
   }
 
   const usdPerEuro = {
@@ -26,7 +32,6 @@
   };
 
   const styles = `
-    @font-face{font-family:"GHEA Mariam";font-style:normal;font-weight:400;font-display:swap;src:url("${gheaMariamUrl}") format("opentype")}
     @font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:400;font-display:swap;src:url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2") format("woff2")}
     @font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:500;font-display:swap;src:url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2") format("woff2")}
     :host{--ink:#111;--muted:#777;--line:#ddd;--paper:#fff;--pad:clamp(20px,4cqw,64px);display:block;width:100%;container-type:inline-size;color:var(--ink);background:var(--paper);font:14px Inter,Arial,sans-serif}
@@ -72,7 +77,7 @@
     .artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:artworkAppear .68s ease both}
     @keyframes artworkAppear{from{opacity:0}to{opacity:1}}
     .meta>div,.meta dl{min-width:0}
-    .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0;overflow-wrap:normal;word-break:normal}
+    .meta h2{--archive-title-size:clamp(27px,3cqw,42px);font:500 var(--archive-title-size)/1 "Cormorant Garamond",Georgia,serif;margin:0;overflow-wrap:normal;word-break:normal}
     .year{margin:8px 0 0;color:var(--muted)}
     dl{width:100%;margin:0;min-width:0}
     dl div{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:clamp(8px,1.5cqw,20px);padding:2px 0 5px}
@@ -113,7 +118,7 @@
       .controls label{gap:3px;flex:1;font-size:9px;letter-spacing:.1em}
       .controls input,.controls select{width:100%;min-width:0;min-height:32px;padding:4px 1px;font-size:16px;line-height:1.2}
       .select-controls label{flex:1;min-width:0}
-      h1{font-size:70px}.meta{grid-template-columns:minmax(0,50%) minmax(0,50%);gap:0;padding-top:20px}.meta dl{width:100%;max-width:none;min-width:0}.meta dl>div{display:grid;grid-template-columns:minmax(0,35%) minmax(0,1fr);align-items:start;gap:clamp(4px,1cqw,8px);padding:2px 0 7px}.meta dt{font-size:10px;line-height:1.35;padding-top:2px;white-space:nowrap;text-align:left}.meta dd{min-width:0;font-size:13px;line-height:1.35;text-align:right;overflow-wrap:anywhere}.meta h2{font-size:38px}.year{font-size:17px}
+      h1{font-size:70px}.meta{grid-template-columns:minmax(0,50%) minmax(0,50%);gap:0;padding-top:20px}.meta dl{width:100%;max-width:none;min-width:0}.meta dl>div{display:grid;grid-template-columns:minmax(0,35%) minmax(0,1fr);align-items:start;gap:clamp(4px,1cqw,8px);padding:2px 0 7px}.meta dt{font-size:10px;line-height:1.35;padding-top:2px;white-space:nowrap;text-align:left}.meta dd{min-width:0;font-size:13px;line-height:1.35;text-align:right;overflow-wrap:anywhere}.meta h2{--archive-title-size:38px;font-size:var(--archive-title-size)}.year{font-size:17px}
       :host(.da-theme-dark) .image-button>.card-loader.is-ready{width:clamp(104px,31vw,136px);height:clamp(104px,31vw,136px)}
       .gallery-nav{width:48px;height:48px;background:rgba(0,0,0,.24)}.gallery-nav::before{width:14px;height:18px}.previous{left:4px}.next{right:4px}.viewer-caption{padding:0 14px}.viewer-caption p{font-size:19px}.image-counter{font-size:9px}.close{right:10px;top:10px}
     }
@@ -121,14 +126,17 @@
     @media(max-width:760px) and (orientation:landscape){
       .archive{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(28px,6cqw,42px) clamp(16px,3cqw,24px)}
       .meta{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,2.5cqw,30px);padding-top:18px;margin-top:18px}
-      .meta h2{font:500 clamp(27px,3cqw,42px)/1 "Cormorant Garamond",Georgia,serif;margin:0}
+      .meta h2{--archive-title-size:clamp(27px,3cqw,42px);font:500 var(--archive-title-size)/1 "Cormorant Garamond",Georgia,serif;margin:0}
       .year{margin:8px 0 0}
       .meta dl{margin:0;width:100%;max-width:none;min-width:0}
       .meta dl>div{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:clamp(8px,1.5cqw,20px);padding:2px 0 5px}
       .meta dt{font-size:8px;line-height:1.35;padding-top:0;white-space:normal;text-align:left}
       .meta dd{min-width:0;font-size:11px;line-height:1.35;text-align:right;overflow-wrap:anywhere}
     }
-    .meta h2[lang="hy"],.viewer-caption p[lang="hy"]{font-family:"GHEA Mariam","Cormorant Garamond",Georgia,serif;font-weight:400}
+    .meta h2[lang="hy"],.viewer-caption p[lang="hy"]{font-family:"DA GHEA Mariam","Cormorant Garamond",Georgia,serif;font-weight:400}
+    .meta h2[lang="hy"]{font-size:calc(var(--archive-title-size) - 3px);line-height:1.08}
+    .viewer-caption p[lang="hy"]{font-size:20px;line-height:1.2}
+    @media(max-width:760px){.viewer-caption p[lang="hy"]{font-size:17px}}
     @media(prefers-reduced-motion:reduce){.image-button img,.image-button>.card-loader{transition:none}.viewer-frame img,.archive-spinner,.artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:none!important}.artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:1;transform:none}}
   `;
 
