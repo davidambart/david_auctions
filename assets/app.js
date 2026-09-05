@@ -58,8 +58,9 @@ function bidValue(value=''){
 }
 const bidNumberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 function formatBid(value = '') {
-  if (!/€|\bEUR\b/i.test(value)) return value;
-  return `${bidNumberFormat.format(bidValue(value))}\u00a0€`;
+  const currency = /€|\bEUR\b/i.test(value) ? '€' : /\$|\bUSD\b/i.test(value) ? 'USD' : '';
+  if (!currency) return value;
+  return `${bidNumberFormat.format(bidValue(value)).replace(/,/g, '\u202f')}\u00a0${currency}`;
 }
 
 // ECB daily reference rates: US dollars per euro on each USD auction's end date.

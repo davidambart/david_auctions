@@ -162,8 +162,9 @@
 
   const bidNumberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
   function formatBid(value = '') {
-    if (!/€|\bEUR\b/i.test(value)) return value;
-    return `${bidNumberFormat.format(bidValue(value))}\u00a0€`;
+    const currency = /€|\bEUR\b/i.test(value) ? '€' : /\$|\bUSD\b/i.test(value) ? 'USD' : '';
+    if (!currency) return value;
+    return `${bidNumberFormat.format(bidValue(value)).replace(/,/g, '\u202f')}\u00a0${currency}`;
   }
 
   function resultInEuro(work) {
