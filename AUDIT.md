@@ -1,6 +1,6 @@
 # Prüfung der Auktionsseite — 5. September 2026
 
-Geprüft wurden https://david-ambarzumjan.com/auctions sowie das lokale Archiv-Modul und die separate HTML-Seite. Änderungen sind lokal vorbereitet, nicht veröffentlicht.
+Geprüft wurden https://david-ambarzumjan.com/auctions sowie das lokale Archiv-Modul und die separate HTML-Seite. Die Verbesserungen wurden nach Freigabe veröffentlicht; Squarespace verwendet die Version `b33bdc7`.
 
 ## Behoben
 
@@ -27,13 +27,17 @@ Geprüft wurden https://david-ambarzumjan.com/auctions sowie das lokale Archiv-M
 - `node scripts/check.mjs` prüft CSV-Sonderzeichen, Daten/Bildpfade, bestehende Währungsumrechnung, Wiederholung fehlgeschlagener Bildanfragen, Cache-Wiederverwendung, Scrollsperre und mehrfache Skripteinbindung.
 - JavaScript-Syntaxprüfung und `git diff --check` bestanden.
 
-## Noch in Squarespace zu erledigen
+## Squarespace: Ausgangsbefunde und Umsetzung
 
 1. **Veralteter Auktionsbanner:** Die Seite zeigt noch „New Auction · Closes Sep 3, 18:00 UTC“ und „Join the Auction“. Das angegebene Datum liegt vor dem Prüfungstag. Banner aktualisieren oder entfernen; ein automatisches Ablaufdatum wäre sinnvoll. Der Banner liegt nicht in diesem Repository.
 2. **Vier Skripteinbindungen:** Im Live-DOM steht dieselbe Embed-URL viermal. Auf eine Einbindung reduzieren. Der neue frühe Schutz vermeidet zusätzliche Initialisierung, ersetzt aber die Bereinigung der Einbindungen nicht.
 3. **Fest angegebene ältere Version:** Die Live-URL verweist auf `@14874be/assets/embed.js?v=14874be`; lokaler Ausgangsstand ist `a3e4e4d`. Nach Veröffentlichung der Änderungen muss die Squarespace-Einbindung auf die neue veröffentlichte Version gesetzt werden.
 
-Die Änderungen wurden nicht in das Squarespace-Konto eingespielt. Externe Theme-/Banner-Skripte und deren Wechselwirkungen können erst nach Aktualisierung der Einbindung abschließend geprüft werden. Es wurde kein Lighthouse-Lauf und keine Messung unter gedrosseltem Mobilfunk durchgeführt; daher keine numerische Geschwindigkeitszusage. Historische Auktionsergebnisse und Wechselkurse wurden auf technische Verarbeitung, nicht anhand externer Originalbelege geprüft.
+Alle drei Punkte wurden anschließend umgesetzt: Der Banner-Loader ist als `text/plain` deaktiviert und bleibt zur späteren Wiederverwendung gespeichert. Der globale Footer enthält nur noch eine reguläre Archiv-Einbindung und einen Fallback-Loader, jeweils mit der Version `b33bdc7`. Die übrigen Inhalte der Code-Injektion bleiben unverändert. Die CDN-Datei wurde vor der Umstellung bytegenau mit der geprüften lokalen Version verglichen.
+
+Die öffentliche Seite wurde nach dem Speichern erneut geladen: kein Banner, genau eine geladene Archiv-Skript-URL, 91 Werke. Suche mit aktualisierter Trefferzahl, Galerie-Bildwechsel, Reset und höchste Preissortierung funktionieren. Die mobile Live-Ansicht bei 390 px zeigt keinen horizontalen Überlauf; in den geprüften Abläufen wurden keine JavaScript-Fehler protokolliert.
+
+Es wurde kein Lighthouse-Lauf und keine Messung unter gedrosseltem Mobilfunk durchgeführt; daher keine numerische Geschwindigkeitszusage. Historische Auktionsergebnisse und Wechselkurse wurden auf technische Verarbeitung, nicht anhand externer Originalbelege geprüft.
 
 ## Lokal nachprüfen
 
