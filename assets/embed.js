@@ -3,7 +3,7 @@
   if (customElements.get('auction-archive')) return;
   const scriptUrl = document.currentScript?.src || 'https://davidambart.github.io/david_auctions/assets/embed.js';
   const baseUrl = new URL(document.currentScript?.dataset.baseUrl || '../', scriptUrl);
-  const arianAmuSerifUrl = new URL('assets/fonts/ArianAMUSerif/ArianAMUSerif.ttf', baseUrl).href;
+  const gheaMariamUrl = new URL('assets/fonts/GHEAMariam/GHEAMariamReg.otf', baseUrl).href;
   if (!document.querySelector('link[data-auction-archive-fonts]')) {
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
@@ -26,7 +26,7 @@
   };
 
   const styles = `
-    @font-face{font-family:"Arian AMU Serif";font-style:normal;font-weight:400;font-display:swap;src:url("${arianAmuSerifUrl}") format("truetype")}
+    @font-face{font-family:"GHEA Mariam";font-style:normal;font-weight:400;font-display:swap;src:url("${gheaMariamUrl}") format("opentype")}
     @font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:400;font-display:swap;src:url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2") format("woff2")}
     @font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:500;font-display:swap;src:url("https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2") format("woff2")}
     :host{--ink:#111;--muted:#777;--line:#ddd;--paper:#fff;--pad:clamp(20px,4cqw,64px);display:block;width:100%;container-type:inline-size;color:var(--ink);background:var(--paper);font:14px Inter,Arial,sans-serif}
@@ -128,7 +128,7 @@
       .meta dt{font-size:8px;line-height:1.35;padding-top:0;white-space:normal;text-align:left}
       .meta dd{min-width:0;font-size:11px;line-height:1.35;text-align:right;overflow-wrap:anywhere}
     }
-    .meta h2[lang="hy"],.viewer-caption p[lang="hy"]{font-family:"Arian AMU Serif","Cormorant Garamond",Georgia,serif;font-weight:400}
+    .meta h2[lang="hy"],.viewer-caption p[lang="hy"]{font-family:"GHEA Mariam","Cormorant Garamond",Georgia,serif;font-weight:400}
     @media(prefers-reduced-motion:reduce){.image-button img,.image-button>.card-loader{transition:none}.viewer-frame img,.archive-spinner,.artwork.is-revealed .image-button,.artwork.is-revealed .meta{animation:none!important}.artwork.is-reveal-pending .image-button:not(.is-loading),.artwork.is-reveal-pending .meta{opacity:1;transform:none}}
   `;
 

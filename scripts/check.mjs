@@ -18,7 +18,7 @@ const context = vm.createContext({
     decode() { return Promise.resolve(); }
   }
 });
-const instrumentedSource = source.replace('  class StarMurmurationLoader {', '  globalThis.audit = {parseCSV, escapeHTML, resultInEuro, baseUrl, galleryImages, formatBid, isArmenian, arianAmuSerifUrl};\n  class StarMurmurationLoader {');
+const instrumentedSource = source.replace('  class StarMurmurationLoader {', '  globalThis.audit = {parseCSV, escapeHTML, resultInEuro, baseUrl, galleryImages, formatBid, isArmenian, gheaMariamUrl};\n  class StarMurmurationLoader {');
 vm.runInContext(instrumentedSource, context);
 const { parseCSV, escapeHTML, resultInEuro } = context.audit;
 const works = parseCSV(readFileSync(new URL('data/auctions.csv', base), 'utf8'));
@@ -49,8 +49,8 @@ assert.equal(context.audit.formatBid('$1300 USD'), '$1,300');
 assert.ok(works.every(work => work.images.split('|').every(path => !/^assets\/images\/\d+-/.test(path.trim()))));
 assert.equal(escapeHTML('<a title="x">&\''), '&lt;a title=&quot;x&quot;&gt;&amp;&#39;');
 assert.equal(resultInEuro({winningBid: '$1300 USD', auctionEndISO: '2020-06-05'}), 1147.4);
-assert.ok(existsSync(fileURLToPath(new URL('assets/fonts/ArianAMUSerif/ArianAMUSerif.ttf', base))));
-assert.ok(existsSync(fileURLToPath(new URL('assets/fonts/ArianAMUSerif/License.txt', base))));
+assert.ok(existsSync(fileURLToPath(new URL('assets/fonts/GHEAMariam/GHEAMariamReg.otf', base))));
+assert.ok(existsSync(fileURLToPath(new URL('assets/fonts/GHEAMariam/Source-and-license.txt', base))));
 assert.equal(context.audit.isArmenian('Սևան'), true);
 assert.equal(context.audit.isArmenian('Sevan'), false);
 
