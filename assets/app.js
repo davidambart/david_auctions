@@ -93,6 +93,7 @@ function card(w,position){
   return `<article class="artwork" data-title="${esc(w.title.toLowerCase())}" data-year="${esc(w.year)}" data-auction-date="${esc(w.auctionEndISO)}" data-result-eur="${auctionResultEuro(w)}" data-id="${esc(w.id)}">
     <button class="image-button" type="button" aria-label="${hasGallery?`View ${esc(w.title)} image gallery`:`Gallery not yet available for ${esc(w.title)}`}" data-images='${imgs}' data-title="${esc(w.title)}" ${hasGallery?'':'disabled'}>
       ${image?`<img src="${esc(image)}" alt="${esc(imageTitle)}" title="${esc(imageTitle)}" width="800" height="800" loading="${priority?'eager':'lazy'}" fetchpriority="${priority?'high':'low'}" decoding="async">`:'<span>Image not yet available</span>'}
+      ${w.thumbnail&&hasGallery?'<span class="crop-bottom-gradient" aria-hidden="true"></span>':''}
       ${w.thumbnail&&hasGallery?'<span class="crop-expand" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3h8v8M3 13v8h8"/></svg></span>':''}
     </button>
     <div class="meta">
