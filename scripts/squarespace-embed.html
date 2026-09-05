@@ -1,0 +1,14 @@
+<!-- Replace only the existing auction archive <script src="..."> in
+     Squarespace Footer Code Injection, not the entire footer contents. -->
+<script
+  src="https://cdn.jsdelivr.net/gh/davidambart/david_auctions@b9b5675/assets/embed.js?v=b9b5675"
+  data-base-url="https://davidambart.github.io/david_auctions/"
+  defer
+></script>
+
+<!-- Also update the existing da-auction-fallback-loader:
+     1. Set backupUrl to the same src URL above.
+     2. After script.src=backupUrl; add:
+        script.dataset.baseUrl = "https://davidambart.github.io/david_auctions/";
+     Keep only one normal embed and one fallback loader.
+     Leave da-auction-banner-loader disabled (type="text/plain"). -->
